@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import { Input } from '../components/ui/input';
 
+import { useEyeContext } from "../components/EyeContext";
+
+
 interface Message {
   id: string;
   teacher: string;
@@ -19,6 +22,16 @@ interface Message {
 const TEACHERS = ['Dr. Ahmed', 'Dr. Sarah', 'Dr. Mohammed', 'Dr. Fatima'];
 
 export function MessagesPage() {
+
+  const { seconds } = useEyeContext();
+
+  useEffect(() => {
+    if (seconds >= 3) {
+      console.log("👁️ Page2 trigger");
+    }
+  }, [seconds]);
+
+
   const navigate = useNavigate();
   const blinkContext = useBlink();
   const { t } = useLanguage();

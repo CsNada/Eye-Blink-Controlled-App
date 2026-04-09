@@ -18,7 +18,24 @@ import {
   GraduationCap,
 } from 'lucide-react';
 
+import { useEyeContext } from "../components/EyeContext";
+
+
 export function HomePage() {
+
+  const { seconds } = useEyeContext();
+
+  useEffect(() => {
+    if (seconds >= 2) {
+      console.log("⚠️ Page1 warning");
+    }
+
+    if (seconds >= 4) {
+      console.log("🔥 Page1 action");
+    }
+  }, [seconds]);
+
+
   const navigate = useNavigate();
   const blinkContext = useBlink();
   const { language, t } = useLanguage();
