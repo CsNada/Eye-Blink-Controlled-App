@@ -1,89 +1,486 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-const BlinkContext = createContext(null);
+type BlinkAction = "select" | "next" | "back" | "delete" | "send" | "space";
 
-export function BlinkProvider({ children }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+type BlinkControlApi = {
+  select: () => void;
+  navigate: () => void;
+  back: () => void;
+  delete: () => void;
+  send: () => void;
+  space: () => void;
+};
 
-  const buttonsRef = useRef([]);
+type BlinkContextValue = {
+  focusedIndex: number;
+  lastEvent: string | null;
+  registerButton: (el: HTMLElement | null) => void;
+  unregisterButton: (el: HTMLElement | null) => void;
+  focusNext: () => void;
+  focusPrevious: () => void;
+  triggerCurrent: () => void;
+};
 
-  // تسجيل الأزرار
-  const registerButton = (el) => {
-    if (el && !buttonsRef.current.includes(el)) {
-      buttonsRef.current.push(el);
-    }
-  };
+const BlinkContext = createContext<BlinkContextValue | undefined>(undefined);
 
-  // 🔁 التنقل التلقائي
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (buttonsRef.current.length === 0) return;
+const FOCUS_SELECTOR = [
+  "button:not([disabled])",
+  "a[href]",
+  "input:not([disabled])",
+  "textarea:not([disabled])",
+  "select:not([disabled])",
+  "[role='button']:not([aria-disabled='true'])",
+].join(",");
 
-      setCurrentIndex((prev) => {
-        return (prev + 1) % buttonsRef.current.length;
-      });
-    }, 2000);
+const CONFIRMATION_DELAY_MS = 1200;
 
-    return () => clearInterval(interval);
+function isVisible(el: HTMLElement) {
+  if (typeof window === "undefined") return false;
+
+  const style = window.getComputedStyle(el);
+  const rect = el.getBoundingClientRect();
+
+  return (
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.opacity !== "0" &&
+    rect.width > 0 &&
+    rect.height > 0 &&
+    !el.hasAttribute("hidden") &&
+    el.getAttribute("aria-hidden") !== "true"
+  );
+}
+
+function isTextTarget(
+  el: Element | null
+): el is HTMLInputElement | HTMLTextAreaElement {
+  if (!el) return false;
+  return (
+    (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) &&
+    !el.disabled &&
+    !el.readOnly
+  );
+}
+
+function setNativeValue(
+  element: HTMLInputElement | HTMLTextAreaElement,
+  value: string
+) {
+  const proto =
+    element instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : HTMLInputElement.prototype;
+
+  const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
+  descriptor?.set?.call(element, value);
+}
+
+function emitInputEvents(element: HTMLInputElement | HTMLTextAreaElement) {
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+  element.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function dispatchBlinkAction(action: BlinkAction) {
+  window.dispatchEvent(
+    new CustomEvent("blinkAction", {
+      detail: { action },
+    })
+  );
+}
+
+export function BlinkProvider({ children }: { children: React.ReactNode }) {
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [lastEvent, setLastEvent] = useState<string | null>("جاهز للتحكم بالعين");
+
+  const manualButtonsRef = useRef<Set<HTMLElement>>(new Set());
+  const pendingSecondsRef = useRef<number | null>(null);
+  const pendingTimerRef = useRef<number | null>(null);
+  const activeFocusRef = useRef<HTMLElement | null>(null);
+
+  const collectFocusableElements = useCallback(() => {
+    if (typeof document === "undefined") return [];
+
+    const domElements = Array.from(
+      document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
+    ).filter(isVisible);
+
+    const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
+
+    const merged = [...domElements, ...manualElements];
+    const seen = new Set<HTMLElement>();
+
+    return merged.filter((el) => {
+      if (seen.has(el)) return false;
+      seen.add(el);
+      return true;
+    });
   }, []);
 
-  // 👁️ تنفيذ أوامر العين
+  const clearFocusStyle = useCallback(() => {
+    const current = activeFocusRef.current;
+    if (!current) return;
+    current.classList.remove("blink-focus-ring");
+    current.removeAttribute("data-blink-focused");
+    activeFocusRef.current = null;
+  }, []);
+
+  const applyFocusStyle = useCallback(
+    (el: HTMLElement | null) => {
+      if (!el) return;
+
+      clearFocusStyle();
+
+      el.classList.add("blink-focus-ring");
+      el.setAttribute("data-blink-focused", "true");
+
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        el.focus();
+      }
+
+      try {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      } catch {
+        // ignore
+      }
+
+      activeFocusRef.current = el;
+    },
+    [clearFocusStyle]
+  );
+
+  const syncFocus = useCallback(
+    (nextIndex: number) => {
+      const elements = collectFocusableElements();
+      if (!elements.length) {
+        clearFocusStyle();
+        setFocusedIndex(0);
+        return;
+      }
+
+      const safeIndex =
+        ((nextIndex % elements.length) + elements.length) % elements.length;
+
+      setFocusedIndex(safeIndex);
+      applyFocusStyle(elements[safeIndex] ?? null);
+    },
+    [applyFocusStyle, clearFocusStyle, collectFocusableElements]
+  );
+
   useEffect(() => {
-    const handleBlink = (e) => {
-      const seconds = e.detail.seconds;
-      const currentButton = buttonsRef.current[currentIndex];
+    if (typeof document === "undefined") return;
 
-      const activeElement = document.activeElement;
-      const isTyping =
-        activeElement &&
-        (activeElement.tagName === "INPUT" ||
-          activeElement.tagName === "TEXTAREA");
+    const styleId = "blink-focus-ring-style";
+    if (document.getElementById(styleId)) return;
 
-      // 👁️ اختيار
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      .blink-focus-ring {
+        outline: 4px solid rgba(59, 130, 246, 0.95) !important;
+        outline-offset: 4px !important;
+        box-shadow:
+          0 0 0 6px rgba(59, 130, 246, 0.18),
+          0 14px 34px rgba(37, 99, 235, 0.25) !important;
+        transform: scale(1.03) !important;
+        transition: transform 160ms ease, box-shadow 160ms ease, outline-color 160ms ease;
+        z-index: 90 !important;
+        position: relative !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      style.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const elements = collectFocusableElements();
+    if (!elements.length) return;
+
+    if (focusedIndex >= elements.length) {
+      syncFocus(0);
+      return;
+    }
+
+    syncFocus(focusedIndex);
+  }, [collectFocusableElements, focusedIndex, syncFocus]);
+
+  useEffect(() => {
+    const observer =
+      typeof MutationObserver !== "undefined"
+        ? new MutationObserver(() => {
+            const elements = collectFocusableElements();
+            if (!elements.length) return;
+
+            const safeIndex = Math.min(focusedIndex, elements.length - 1);
+            syncFocus(safeIndex);
+          })
+        : null;
+
+    if (observer && typeof document !== "undefined") {
+      observer.observe(document.body, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+      });
+    }
+
+    return () => observer?.disconnect();
+  }, [collectFocusableElements, focusedIndex, syncFocus]);
+
+  const focusNext = useCallback(() => {
+    const elements = collectFocusableElements();
+    if (!elements.length) return;
+    setFocusedIndex((prev) => (prev + 1) % elements.length);
+  }, [collectFocusableElements]);
+
+  const focusPrevious = useCallback(() => {
+    const elements = collectFocusableElements();
+    if (!elements.length) return;
+    setFocusedIndex((prev) => (prev - 1 + elements.length) % elements.length);
+  }, [collectFocusableElements]);
+
+  const triggerCurrent = useCallback(() => {
+    const elements = collectFocusableElements();
+    if (!elements.length) {
+      setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
+      return;
+    }
+
+    const current = elements[focusedIndex] ?? elements[0];
+    current?.click?.();
+    setLastEvent("تم تنفيذ الاختيار");
+  }, [collectFocusableElements, focusedIndex]);
+
+  const deleteFromActiveField = useCallback(() => {
+    const active = document.activeElement;
+
+    if (!isTextTarget(active)) return false;
+
+    const { selectionStart, selectionEnd, value } = active;
+    const start = selectionStart ?? value.length;
+    const end = selectionEnd ?? value.length;
+
+    let nextValue = value;
+    let nextCaret = start;
+
+    if (start !== end) {
+      nextValue = value.slice(0, start) + value.slice(end);
+      nextCaret = start;
+    } else if (start > 0) {
+      nextValue = value.slice(0, start - 1) + value.slice(end);
+      nextCaret = start - 1;
+    }
+
+    setNativeValue(active, nextValue);
+    emitInputEvents(active);
+
+    try {
+      active.setSelectionRange(nextCaret, nextCaret);
+    } catch {
+      // ignore
+    }
+
+    return true;
+  }, []);
+
+  const insertSpaceToActiveField = useCallback(() => {
+    const active = document.activeElement;
+
+    if (!isTextTarget(active)) return false;
+
+    const { selectionStart, selectionEnd, value } = active;
+    const start = selectionStart ?? value.length;
+    const end = selectionEnd ?? value.length;
+
+    const nextValue = value.slice(0, start) + " " + value.slice(end);
+    const nextCaret = start + 1;
+
+    setNativeValue(active, nextValue);
+    emitInputEvents(active);
+
+    try {
+      active.setSelectionRange(nextCaret, nextCaret);
+    } catch {
+      // ignore
+    }
+
+    return true;
+  }, []);
+
+  const sendFromActiveField = useCallback(() => {
+    const active = document.activeElement;
+
+    if (isTextTarget(active)) {
+      const form = active.closest("form") as HTMLFormElement | null;
+      if (form?.requestSubmit) {
+        form.requestSubmit();
+        return true;
+      }
+
+      active.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
+      );
+      active.dispatchEvent(
+        new KeyboardEvent("keyup", { key: "Enter", bubbles: true })
+      );
+      return true;
+    }
+
+    return false;
+  }, []);
+
+  const executeFinalBlinkAction = useCallback(
+    (seconds: number) => {
+      if (seconds === 1) {
+        dispatchBlinkAction("delete");
+        if (deleteFromActiveField()) setLastEvent("تم الحذف");
+        else setLastEvent("أمر الحذف غير متاح هنا");
+        return;
+      }
+
       if (seconds === 2) {
-        currentButton?.click();
+        dispatchBlinkAction("select");
+        triggerCurrent();
+        return;
       }
 
-      // 👁️ تصفح / ⌨️ مسافة
       if (seconds === 3) {
-        if (isTyping) {
-          activeElement.dispatchEvent(
-            new KeyboardEvent("keydown", { key: " " })
-          );
-        } else {
-          window.scrollBy({ top: 200, behavior: "smooth" });
-        }
+        dispatchBlinkAction("next");
+        focusNext();
+        setLastEvent("تم الانتقال إلى العنصر التالي");
+        return;
       }
 
-      // 👁️ رجوع
       if (seconds === 4) {
+        dispatchBlinkAction("back");
         window.history.back();
+        setLastEvent("تم الرجوع");
+        return;
       }
 
-      // ⌨️ حذف
-      if (seconds === 1 && isTyping) {
-        activeElement.dispatchEvent(
-          new KeyboardEvent("keydown", { key: "Backspace" })
-        );
+      if (seconds === 5) {
+        dispatchBlinkAction("send");
+        if (sendFromActiveField()) setLastEvent("تم الإرسال");
+        else setLastEvent("أمر الإرسال غير متاح هنا");
+        return;
       }
 
-      // ⌨️ إرسال
-      if (seconds === 5 && isTyping) {
-        activeElement.dispatchEvent(
-          new KeyboardEvent("keydown", { key: "Enter" })
-        );
+      if (seconds === 6) {
+        dispatchBlinkAction("space");
+        if (insertSpaceToActiveField()) setLastEvent("تمت إضافة مسافة");
+        else setLastEvent("أمر المسافة غير متاح هنا");
+        return;
+      }
+
+      setLastEvent(`تم رصد ${seconds} ثوانٍ`);
+    },
+    [
+      deleteFromActiveField,
+      focusNext,
+      insertSpaceToActiveField,
+      sendFromActiveField,
+      triggerCurrent,
+    ]
+  );
+
+  const scheduleFinalAction = useCallback(
+    (seconds: number) => {
+      pendingSecondsRef.current = seconds;
+
+      if (pendingTimerRef.current) {
+        window.clearTimeout(pendingTimerRef.current);
+      }
+
+      pendingTimerRef.current = window.setTimeout(() => {
+        if (pendingSecondsRef.current === seconds) {
+          executeFinalBlinkAction(seconds);
+          pendingSecondsRef.current = null;
+        }
+      }, CONFIRMATION_DELAY_MS);
+    },
+    [executeFinalBlinkAction]
+  );
+
+  useEffect(() => {
+    const onBlinkEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ seconds?: number }>;
+      const seconds = customEvent.detail?.seconds;
+      if (typeof seconds === "number") {
+        scheduleFinalAction(seconds);
       }
     };
 
-    window.addEventListener("blinkEvent", handleBlink);
-    return () => window.removeEventListener("blinkEvent", handleBlink);
-  }, [currentIndex]);
+    const blinkControl = {
+      select: () => scheduleFinalAction(2),
+      navigate: () => scheduleFinalAction(3),
+      back: () => scheduleFinalAction(4),
+      delete: () => scheduleFinalAction(1),
+      send: () => scheduleFinalAction(5),
+      space: () => scheduleFinalAction(6),
+    } satisfies BlinkControlApi;
 
-  return (
-    <BlinkContext.Provider value={{ registerButton, currentIndex }}>
-      {children}
-    </BlinkContext.Provider>
+    const w = window as Window & { blinkControl?: BlinkControlApi };
+    w.blinkControl = blinkControl;
+
+    window.addEventListener("blinkEvent", onBlinkEvent as EventListener);
+
+    return () => {
+      window.removeEventListener("blinkEvent", onBlinkEvent as EventListener);
+      if (pendingTimerRef.current) {
+        window.clearTimeout(pendingTimerRef.current);
+      }
+      if (w.blinkControl) delete w.blinkControl;
+    };
+  }, [scheduleFinalAction]);
+
+  const registerButton = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    manualButtonsRef.current.add(el);
+  }, []);
+
+  const unregisterButton = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    manualButtonsRef.current.delete(el);
+  }, []);
+
+  const value = useMemo<BlinkContextValue>(
+    () => ({
+      focusedIndex,
+      lastEvent,
+      registerButton,
+      unregisterButton,
+      focusNext,
+      focusPrevious,
+      triggerCurrent,
+    }),
+    [
+      focusedIndex,
+      lastEvent,
+      registerButton,
+      unregisterButton,
+      focusNext,
+      focusPrevious,
+      triggerCurrent,
+    ]
   );
+
+  return <BlinkContext.Provider value={value}>{children}</BlinkContext.Provider>;
 }
 
 export function useBlink() {

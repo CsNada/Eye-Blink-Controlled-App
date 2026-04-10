@@ -190,7 +190,7 @@ export function NotesPage() {
             {/* Scanning Keyboard */}
             <Card className="border border-border shadow-lg">
               <CardContent className="pt-6">
-                <ScanningKeyboard value={currentNote} onChange={setCurrentNote} />
+                <ScanningKeyboard value={currentNote} onChange={setCurrentNote} onSend={handleSaveNote} />
               </CardContent>
             </Card>
 
