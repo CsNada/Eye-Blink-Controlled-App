@@ -1,7 +1,7 @@
 export function handlePageRules(path, seconds) {
   console.log("RULE CHECK:", path, seconds);
 
-  if (path === "/page1") {
+  if (path === "/") {
     if (seconds >= 2) console.log("⚠️ Page1 warning");
     if (seconds >= 4) console.log("🔥 Page1 action");
   }

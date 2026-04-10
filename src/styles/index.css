@@ -11,6 +11,12 @@
     opacity: 1;
   }
 }
+.highlight {
+  border: 3px solid #22d3ee;
+  box-shadow: 0 0 15px #22d3ee;
+  transform: scale(1.05);
+  transition: 0.2s;
+}
 
 .animate-in {
   animation: fade-in 0.3s ease-in;
