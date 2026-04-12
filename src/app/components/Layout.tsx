@@ -35,7 +35,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <BlinkControls
+      <BlinkControls 
         showDeleteButton={showDeleteButton}
         showSendButton={showSendButton}
       />

@@ -49,9 +49,9 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            <FocusableButton role="button"
-tabIndex={0} 
+            <FocusableButton
               index={1}
+              role="button" 
               onClick={toggleLanguage}
               className="flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl bg-blue-50 hover:bg-blue-100 px-3 transition-all duration-200 shadow-sm hover:shadow-md"
               aria-label="تبديل اللغة"
@@ -64,6 +64,7 @@ tabIndex={0}
 
             <FocusableButton
               index={2}
+              role="button"
               onClick={toggleTheme}
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-100 transition-all duration-200 shadow-sm hover:shadow-md"
               aria-label="تبديل الوضع"

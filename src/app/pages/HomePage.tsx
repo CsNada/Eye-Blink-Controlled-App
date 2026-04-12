@@ -24,7 +24,7 @@ export function HomePage() {
 
   const { registerButton, currentIndex } = useBlink();
   const indexRef = React.useRef(Math.random()); // معرف فريد
-  
+
   const { seconds } = useEyeContext();
 
   useEffect(() => {
@@ -44,9 +44,9 @@ export function HomePage() {
   const [autoScanIndex, setAutoScanIndex] = useState(0);
 
   // Safely access context functions with fallbacks
-  const setTotalItems = blinkContext?.setTotalItems ?? (() => {});
-  const setOnSelect = blinkContext?.setOnSelect ?? (() => {});
-  const setOnBack = blinkContext?.setOnBack ?? (() => {});
+  const setTotalItems = blinkContext?.setTotalItems ?? (() => { });
+  const setOnSelect = blinkContext?.setOnSelect ?? (() => { });
+  const setOnBack = blinkContext?.setOnBack ?? (() => { });
 
   // Define reminders based on language
   const REMINDERS = [
@@ -154,7 +154,8 @@ export function HomePage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Notes - Featured/Larger Card */}
-            <Card 
+            <Card role="button"
+              tabIndex={0}
               className="overflow-hidden border-2 border-emerald-300/70 bg-gradient-to-br from-emerald-100/70 via-teal-50/60 to-white shadow-2xl hover:shadow-[0_20px_50px_rgba(16,185,129,0.25)] transition-all duration-500 cursor-pointer group md:col-span-2 relative hover:scale-[1.02]"
               onClick={() => navigate('/notes')}
             >
@@ -176,9 +177,11 @@ export function HomePage() {
             </Card>
 
             {/* Messages */}
-            <Card 
-              className="overflow-hidden border-2 border-blue-300/60 shadow-xl hover:shadow-[0_15px_40px_rgba(59,130,246,0.2)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02] bg-gradient-to-br from-blue-100/60 via-cyan-50/40 to-white"
+            <Card
+              role="button"
+              tabIndex={1}
               onClick={() => navigate('/messages')}
+              className="overflow-hidden border-2 border-blue-300/60 shadow-xl hover:shadow-[0_15px_40px_rgba(59,130,246,0.2)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02] bg-gradient-to-br from-blue-100/60 via-cyan-50/40 to-white"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-300/30 to-transparent rounded-full blur-xl" />
               <div className="h-2 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 shadow-md" />
@@ -197,7 +200,8 @@ export function HomePage() {
             </Card>
 
             {/* Student Profile */}
-            <Card
+            <Card role="button"
+              tabIndex={3}
               className="overflow-hidden border-2 border-purple-300/60 shadow-xl hover:shadow-[0_15px_40px_rgba(168,85,247,0.2)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02] bg-gradient-to-br from-purple-100/60 via-pink-50/40 to-white"
               onClick={() => navigate('/student-profile')}
             >
@@ -227,7 +231,8 @@ export function HomePage() {
           </h3>
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('platformsSubtitle')}</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card 
+            <Card role="button"
+              tabIndex={4}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-blue-200/70 bg-gradient-to-br from-blue-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] hover:border-blue-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -241,7 +246,8 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card role="button"
+              tabIndex={5}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-indigo-200/70 bg-gradient-to-br from-indigo-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(99,102,241,0.15)] hover:border-indigo-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -255,7 +261,8 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card role="button"
+              tabIndex={6}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-purple-200/70 bg-gradient-to-br from-purple-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(168,85,247,0.15)] hover:border-purple-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -269,7 +276,8 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card role="button"
+              tabIndex={7}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-red-200/70 bg-gradient-to-br from-red-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(239,68,68,0.15)] hover:border-red-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -283,7 +291,8 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card role="button"
+              tabIndex={8}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-slate-200/70 bg-gradient-to-br from-slate-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(100,116,139,0.15)] hover:border-slate-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -297,7 +306,8 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card role="button"
+              tabIndex={9}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-teal-200/70 bg-gradient-to-br from-teal-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(20,184,166,0.15)] hover:border-teal-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -320,7 +330,8 @@ export function HomePage() {
             {t('filesTitle')}
           </h3>
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('filesSubtitle')}</p>
-          <Card 
+          <Card role="button"
+              tabIndex={10}
             onClick={() => navigate('/files')}
             className="overflow-hidden border-2 border-indigo-300/70 bg-gradient-to-br from-indigo-100/70 via-purple-50/60 to-white shadow-2xl hover:shadow-[0_20px_50px_rgba(99,102,241,0.25)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02]"
           >
@@ -352,7 +363,8 @@ export function HomePage() {
             {t('browsers')}
           </h3>
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('browsersSubtitle')}</p>
-          <Card 
+          <Card role="button"
+              tabIndex={11}
             onClick={() => navigate('/browsers')}
             className="overflow-hidden border-2 border-cyan-300/70 bg-gradient-to-br from-cyan-100/70 via-blue-50/60 to-white shadow-2xl hover:shadow-[0_20px_50px_rgba(6,182,212,0.25)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02]"
           >
