@@ -31,20 +31,13 @@ type BlinkContextValue = {
 
 const BlinkContext = createContext<BlinkContextValue | undefined>(undefined);
 
-const FOCUS_SELECTOR = [
-  "button:not([disabled])",
-  "a[href]",
-  "input:not([disabled])",
-  "textarea:not([disabled])",
-  "select:not([disabled])",
-  "[role='button']:not([aria-disabled='true'])",
-].join(",");
+const FOCUS_SELECTOR =
+  "button:not([disabled]), a[href], [role='button']:not([aria-disabled='true'])";
 
 const CONFIRMATION_DELAY_MS = 1200;
 
 function isVisible(el: HTMLElement) {
   if (typeof window === "undefined") return false;
-
   const style = window.getComputedStyle(el);
   const rect = el.getBoundingClientRect();
 
@@ -103,7 +96,6 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
   const manualButtonsRef = useRef<Set<HTMLElement>>(new Set());
   const pendingSecondsRef = useRef<number | null>(null);
   const pendingTimerRef = useRef<number | null>(null);
-  const activeFocusRef = useRef<HTMLElement | null>(null);
 
   const collectFocusableElements = useCallback(() => {
     if (typeof document === "undefined") return [];
@@ -124,31 +116,25 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const clearFocusStyle = useCallback(() => {
-    const current = activeFocusRef.current;
-    if (!current) return;
-    current.classList.remove("blink-focus-ring");
-    current.removeAttribute("data-blink-focused");
-    activeFocusRef.current = null;
-  }, []);
+  const focusElement = useCallback(
+    (index: number) => {
+      const elements = collectFocusableElements();
+      if (!elements.length) return;
 
-  const applyFocusStyle = useCallback(
-    (el: HTMLElement | null) => {
-      if (!el) return;
+      const safeIndex = ((index % elements.length) + elements.length) % elements.length;
+      const element = elements[safeIndex];
+      if (!element) return;
 
-      clearFocusStyle();
-
-      el.classList.add("blink-focus-ring");
-      el.setAttribute("data-blink-focused", "true");
+      setFocusedIndex(safeIndex);
 
       try {
-        el.focus({ preventScroll: true });
+        element.focus({ preventScroll: true });
       } catch {
-        el.focus();
+        element.focus();
       }
 
       try {
-        el.scrollIntoView({
+        element.scrollIntoView({
           behavior: "smooth",
           block: "center",
           inline: "center",
@@ -156,28 +142,8 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // ignore
       }
-
-      activeFocusRef.current = el;
     },
-    [clearFocusStyle]
-  );
-
-  const syncFocus = useCallback(
-    (nextIndex: number) => {
-      const elements = collectFocusableElements();
-      if (!elements.length) {
-        clearFocusStyle();
-        setFocusedIndex(0);
-        return;
-      }
-
-      const safeIndex =
-        ((nextIndex % elements.length) + elements.length) % elements.length;
-
-      setFocusedIndex(safeIndex);
-      applyFocusStyle(elements[safeIndex] ?? null);
-    },
-    [applyFocusStyle, clearFocusStyle, collectFocusableElements]
+    [collectFocusableElements]
   );
 
   useEffect(() => {
@@ -213,45 +179,30 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     if (!elements.length) return;
 
     if (focusedIndex >= elements.length) {
-      syncFocus(0);
+      setFocusedIndex(0);
+      focusElement(0);
       return;
     }
 
-    syncFocus(focusedIndex);
-  }, [collectFocusableElements, focusedIndex, syncFocus]);
-
-  useEffect(() => {
-    const observer =
-      typeof MutationObserver !== "undefined"
-        ? new MutationObserver(() => {
-            const elements = collectFocusableElements();
-            if (!elements.length) return;
-
-            const safeIndex = Math.min(focusedIndex, elements.length - 1);
-            syncFocus(safeIndex);
-          })
-        : null;
-
-    if (observer && typeof document !== "undefined") {
-      observer.observe(document.body, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-      });
+    const active = elements[focusedIndex];
+    if (active) {
+      elements.forEach((el) => el.classList.remove("blink-focus-ring"));
+      active.classList.add("blink-focus-ring");
+      focusElement(focusedIndex);
     }
-
-    return () => observer?.disconnect();
-  }, [collectFocusableElements, focusedIndex, syncFocus]);
+  }, [collectFocusableElements, focusElement, focusedIndex]);
 
   const focusNext = useCallback(() => {
     const elements = collectFocusableElements();
     if (!elements.length) return;
+
     setFocusedIndex((prev) => (prev + 1) % elements.length);
   }, [collectFocusableElements]);
 
   const focusPrevious = useCallback(() => {
     const elements = collectFocusableElements();
     if (!elements.length) return;
+
     setFocusedIndex((prev) => (prev - 1 + elements.length) % elements.length);
   }, [collectFocusableElements]);
 
@@ -333,12 +284,8 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      active.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
-      );
-      active.dispatchEvent(
-        new KeyboardEvent("keyup", { key: "Enter", bubbles: true })
-      );
+      active.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      active.dispatchEvent(new KeyboardEvent("keyup", { key: "Enter", bubbles: true }));
       return true;
     }
 
@@ -349,8 +296,11 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     (seconds: number) => {
       if (seconds === 1) {
         dispatchBlinkAction("delete");
-        if (deleteFromActiveField()) setLastEvent("تم الحذف");
-        else setLastEvent("أمر الحذف غير متاح هنا");
+        if (deleteFromActiveField()) {
+          setLastEvent("تم الحذف");
+        } else {
+          setLastEvent("أمر الحذف غير متاح هنا");
+        }
         return;
       }
 
@@ -376,27 +326,27 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
 
       if (seconds === 5) {
         dispatchBlinkAction("send");
-        if (sendFromActiveField()) setLastEvent("تم الإرسال");
-        else setLastEvent("أمر الإرسال غير متاح هنا");
+        if (sendFromActiveField()) {
+          setLastEvent("تم الإرسال");
+        } else {
+          setLastEvent("أمر الإرسال غير متاح هنا");
+        }
         return;
       }
 
       if (seconds === 6) {
         dispatchBlinkAction("space");
-        if (insertSpaceToActiveField()) setLastEvent("تمت إضافة مسافة");
-        else setLastEvent("أمر المسافة غير متاح هنا");
+        if (insertSpaceToActiveField()) {
+          setLastEvent("تمت إضافة مسافة");
+        } else {
+          setLastEvent("أمر المسافة غير متاح هنا");
+        }
         return;
       }
 
       setLastEvent(`تم رصد ${seconds} ثوانٍ`);
     },
-    [
-      deleteFromActiveField,
-      focusNext,
-      insertSpaceToActiveField,
-      sendFromActiveField,
-      triggerCurrent,
-    ]
+    [deleteFromActiveField, focusNext, insertSpaceToActiveField, sendFromActiveField, triggerCurrent]
   );
 
   const scheduleFinalAction = useCallback(
@@ -421,6 +371,7 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     const onBlinkEvent = (event: Event) => {
       const customEvent = event as CustomEvent<{ seconds?: number }>;
       const seconds = customEvent.detail?.seconds;
+
       if (typeof seconds === "number") {
         scheduleFinalAction(seconds);
       }
