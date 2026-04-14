@@ -39,6 +39,7 @@ const ACTION_COOLDOWN_MS = 700;
 
 function isVisible(el: HTMLElement) {
   if (typeof window === "undefined") return false;
+
   const style = window.getComputedStyle(el);
   const rect = el.getBoundingClientRect();
 
@@ -57,6 +58,7 @@ function isTextTarget(
   el: Element | null
 ): el is HTMLInputElement | HTMLTextAreaElement {
   if (!el) return false;
+
   return (
     (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) &&
     !el.disabled &&
@@ -97,20 +99,20 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
   const manualButtonsRef = useRef<Set<HTMLElement>>(new Set());
   const pendingSecondsRef = useRef<number | null>(null);
   const pendingTimerRef = useRef<number | null>(null);
-  const lastActionRef = useRef<{ action: BlinkAction | null; time: number }>({
-    action: null,
+  const lastExecutionRef = useRef<{ seconds: number | null; time: number }>({
+    seconds: null,
     time: 0,
   });
 
-  const shouldIgnoreAction = useCallback((action: BlinkAction) => {
+  const shouldIgnoreExecution = useCallback((seconds: number) => {
     const now = Date.now();
-    const last = lastActionRef.current;
+    const last = lastExecutionRef.current;
 
-    if (last.action === action && now - last.time < ACTION_COOLDOWN_MS) {
+    if (last.seconds === seconds && now - last.time < ACTION_COOLDOWN_MS) {
       return true;
     }
 
-    lastActionRef.current = { action, time: now };
+    lastExecutionRef.current = { seconds, time: now };
     return false;
   }, []);
 
@@ -311,8 +313,12 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      active.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-      active.dispatchEvent(new KeyboardEvent("keyup", { key: "Enter", bubbles: true }));
+      active.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
+      );
+      active.dispatchEvent(
+        new KeyboardEvent("keyup", { key: "Enter", bubbles: true })
+      );
       return true;
     }
 
@@ -321,37 +327,21 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
 
   const executeFinalBlinkAction = useCallback(
     (seconds: number) => {
-      const action: BlinkAction | null =
-        seconds === 1
-          ? "delete"
-          : seconds === 2
-          ? "select"
-          : seconds === 3
-          ? "next"
-          : seconds === 4
-          ? "back"
-          : seconds === 5
-          ? "send"
-          : seconds === 6
-          ? "space"
-          : null;
-
-      if (action && shouldIgnoreAction(action)) {
+      if (shouldIgnoreExecution(seconds)) {
         return;
       }
 
       if (seconds === 1) {
         dispatchBlinkAction("delete");
-        if (deleteFromActiveField()) {
-          setLastEvent("تم الحذف");
-        } else {
-          setLastEvent("أمر الحذف غير متاح هنا");
-        }
+        // if (deleteFromActiveField()) {
+        //   setLastEvent("تم الحذف");
+        // } else {
+        //   setLastEvent("أمر الحذف غير متاح هنا");
+        // }
         return;
       }
 
       if (seconds === 2) {
-        dispatchBlinkAction("select");
         triggerCurrent();
         return;
       }
@@ -371,24 +361,44 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (seconds === 5) {
-        dispatchBlinkAction("send");
-        if (sendFromActiveField()) {
-          setLastEvent("تم الإرسال");
-        } else {
-          setLastEvent("أمر الإرسال غير متاح هنا");
-        }
-        return;
-      }
+  dispatchBlinkAction("send");
+
+  // const success = sendFromActiveField();
+
+  // const isKeyboardActive = document.querySelector(
+  //   "[data-keyboard-root]:focus-within"
+  // );
+
+  // if (success) {
+  //   setLastEvent("تم الإرسال");
+  // } else if (isKeyboardActive) {
+  //   setLastEvent("تم تنفيذ أمر الإرسال");
+  // } else {
+  //   setLastEvent("أمر الإرسال غير متاح هنا");
+  // }
+
+  return;
+}
 
       if (seconds === 6) {
-        dispatchBlinkAction("space");
-        if (insertSpaceToActiveField()) {
-          setLastEvent("تمت إضافة مسافة");
-        } else {
-          setLastEvent("أمر المسافة غير متاح هنا");
-        }
-        return;
-      }
+  dispatchBlinkAction("space");
+
+  // const success = insertSpaceToActiveField();
+
+  // const isKeyboardActive = document.querySelector(
+  //   "[data-keyboard-root]:focus-within"
+  // );
+
+  // if (success) {
+  //   setLastEvent("تمت إضافة مسافة");
+  // } else if (isKeyboardActive) {
+  //   setLastEvent("تم تنفيذ أمر المسافة");
+  // } else {
+  //   setLastEvent("أمر المسافة غير متاح هنا");
+  // }
+
+  return;
+}
 
       setLastEvent(`تم رصد ${seconds} ثوانٍ`);
     },
@@ -397,7 +407,7 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
       focusNext,
       insertSpaceToActiveField,
       sendFromActiveField,
-      shouldIgnoreAction,
+      shouldIgnoreExecution,
       triggerCurrent,
     ]
   );
@@ -446,9 +456,11 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       window.removeEventListener("blinkEvent", onBlinkEvent as EventListener);
+
       if (pendingTimerRef.current) {
         window.clearTimeout(pendingTimerRef.current);
       }
+
       if (w.blinkControl) delete w.blinkControl;
     };
   }, [scheduleFinalAction]);
@@ -484,7 +496,9 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     ]
   );
 
-  return <BlinkContext.Provider value={value}>{children}</BlinkContext.Provider>;
+  return (
+    <BlinkContext.Provider value={value}>{children}</BlinkContext.Provider>
+  );
 }
 
 export function useBlink() {

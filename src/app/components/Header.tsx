@@ -1,27 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { Moon, Sun, Globe, ArrowLeft } from "lucide-react";
 import logoImage from "../../imports/PHOTO-2026-04-02-19-00-15-1.jpeg";
 import { FocusableButton } from "./FocusableButton";
-import { useBlink } from "../contexts/BlinkContext";
 
 export function Header() {
-  const blink = useBlink();
-  const langRef = useRef<HTMLButtonElement | null>(null);
-  const themeRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (langRef.current) blink?.registerButton(langRef.current);
-    if (themeRef.current) blink?.registerButton(themeRef.current);
-
-    return () => {
-      if (langRef.current) blink?.unregisterButton(langRef.current);
-      if (themeRef.current) blink?.unregisterButton(themeRef.current);
-    };
-  }, [blink]);
-
   const navigate = useNavigate();
   const location = useLocation();
   const { language, toggleLanguage } = useLanguage();
@@ -30,7 +15,7 @@ export function Header() {
   const isHome = location.pathname === "/";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
+    <header className="sticky top-0 z-100 w-full border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -46,7 +31,11 @@ export function Header() {
             )}
 
             <div className="flex items-center justify-center">
-              <img src={logoImage} alt="Logo" className="h-12 w-12 object-contain" />
+              <img
+                src={logoImage}
+                alt="Logo"
+                className="h-12 w-12 object-contain"
+              />
             </div>
 
             <div className="flex flex-col">
@@ -61,7 +50,7 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             <FocusableButton
-            index={1}
+              index={1}
               type="button"
               data-blink-focusable="true"
               onClick={toggleLanguage}
@@ -75,8 +64,8 @@ export function Header() {
             </FocusableButton>
 
             <FocusableButton
-            index={2}
-              type="button"
+              index={2}
+              role="button"
               data-blink-focusable="true"
               onClick={toggleTheme}
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-100 transition-all duration-200 shadow-sm hover:shadow-md"

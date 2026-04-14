@@ -34,8 +34,8 @@ export function BlinkControls({
           </div>
         )}
 
-        <div className={`grid gap-3 ${getGridCols()}`}>
-          {showDeleteButton && (
+        <div className={`grid gap-3 grid-cols-3`}>
+          {/* {showDeleteButton && (
             <div className="relative overflow-hidden rounded-2xl border-2 border-red-200 bg-gradient-to-br from-red-100 to-red-50 shadow-md">
               <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
@@ -47,10 +47,10 @@ export function BlinkControls({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="relative overflow-hidden rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-blue-50 shadow-md">
-            <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex min-h-[60px] flex-col items-center justify-center gap-2 p-4 text-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
                 <MousePointer2 className="h-5 w-5 text-blue-600" />
               </div>
@@ -62,7 +62,7 @@ export function BlinkControls({
           </div>
 
           <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-100 to-emerald-50 shadow-md">
-            <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex min-h-[60px] flex-col items-center justify-center gap-2 p-4 text-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
                 <Navigation className="h-5 w-5 text-emerald-600" />
               </div>
@@ -74,7 +74,7 @@ export function BlinkControls({
           </div>
 
           <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 shadow-md">
-            <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex min-h-[60px] flex-col items-center justify-center gap-2 p-4 text-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
                 <ArrowLeft className="h-5 w-5 text-amber-600" />
               </div>
@@ -85,7 +85,7 @@ export function BlinkControls({
             </div>
           </div>
 
-          {showSendButton && (
+          {/* {showSendButton && (
             <div className="relative overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-100 to-violet-50 shadow-md">
               <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
@@ -97,7 +97,7 @@ export function BlinkControls({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="mt-4 rounded-2xl border border-border/60 bg-card/85 px-4 py-2 text-center shadow-lg backdrop-blur-sm">

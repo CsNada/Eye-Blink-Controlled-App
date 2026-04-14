@@ -21,7 +21,7 @@ const arabicChars = [
   " ", ".", "،", "!", "؟", "٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩",
 ];
 
-type BlinkAction = "select" | "next" | "back" | "delete" | "send" | "space";
+type BlinkAction = "next" | "back" | "delete" | "send" | "space";
 
 export function ScanningKeyboard({
   value,
@@ -77,11 +77,6 @@ export function ScanningKeyboard({
         return;
       }
 
-      if (action === "select") {
-        handleSelect();
-        return;
-      }
-
       if (action === "delete") {
         handleDelete();
         return;
@@ -98,8 +93,9 @@ export function ScanningKeyboard({
     };
 
     window.addEventListener("blinkAction", handleBlinkAction as EventListener);
-    return () => window.removeEventListener("blinkAction", handleBlinkAction as EventListener);
-  }, [chars, highlightedIndex, onSend, value]);
+    return () =>
+      window.removeEventListener("blinkAction", handleBlinkAction as EventListener);
+  }, [chars.length, onSend, value]);
 
   return (
     <div ref={rootRef} className={cn("space-y-3", className)}>
@@ -138,10 +134,7 @@ export function ScanningKeyboard({
               appendChar(char);
             }}
             className={cn(
-              "aspect-square flex items-center justify-center rounded-md text-sm font-medium transition-all duration-300",
-              highlightedIndex === index
-                ? "bg-blue-500 text-white scale-105 ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/30"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              "aspect-square flex items-center justify-center rounded-md text-sm font-medium transition-all duration-300 bg-secondary text-secondary-foreground hover:bg-secondary/80"
             )}
           >
             {char === " " ? "␣" : char}
