@@ -60,8 +60,8 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              ref={langRef}
+            <FocusableButton
+            index={1}
               type="button"
               data-blink-focusable="true"
               onClick={toggleLanguage}
@@ -72,10 +72,10 @@ export function Header() {
               <span className="hidden sm:inline text-sm font-medium text-blue-700">
                 {language === "en" ? "عربي" : "EN"}
               </span>
-            </button>
+            </FocusableButton>
 
-            <button
-              ref={themeRef}
+            <FocusableButton
+            index={2}
               type="button"
               data-blink-focusable="true"
               onClick={toggleTheme}
@@ -87,7 +87,7 @@ export function Header() {
               ) : (
                 <Sun className="h-4 w-4 text-blue-600" />
               )}
-            </button>
+            </FocusableButton>
           </div>
         </div>
       </div>

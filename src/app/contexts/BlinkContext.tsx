@@ -35,6 +35,7 @@ const FOCUS_SELECTOR =
   "button:not([disabled]), a[href], [role='button']:not([aria-disabled='true']), [data-blink-focusable='true']";
 
 const CONFIRMATION_DELAY_MS = 1200;
+const ACTION_COOLDOWN_MS = 700;
 
 function isVisible(el: HTMLElement) {
   if (typeof window === "undefined") return false;
@@ -96,32 +97,50 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
   const manualButtonsRef = useRef<Set<HTMLElement>>(new Set());
   const pendingSecondsRef = useRef<number | null>(null);
   const pendingTimerRef = useRef<number | null>(null);
+  const lastActionRef = useRef<{ action: BlinkAction | null; time: number }>({
+    action: null,
+    time: 0,
+  });
+
+  const shouldIgnoreAction = useCallback((action: BlinkAction) => {
+    const now = Date.now();
+    const last = lastActionRef.current;
+
+    if (last.action === action && now - last.time < ACTION_COOLDOWN_MS) {
+      return true;
+    }
+
+    lastActionRef.current = { action, time: now };
+    return false;
+  }, []);
 
   const collectFocusableElements = useCallback(() => {
-  if (typeof document === "undefined") return [];
+    if (typeof document === "undefined") return [];
 
-  const domElements = Array.from(
-    document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
-  ).filter(isVisible);
+    const domElements = Array.from(
+      document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
+    ).filter(isVisible);
 
-  const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
+    const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
 
-  const merged = [...manualElements, ...domElements];
-  const seen = new Set<HTMLElement>();
+    const merged = [...domElements, ...manualElements];
+    const seen = new Set<HTMLElement>();
 
-  return merged.filter((el) => {
-    if (seen.has(el)) return false;
-    seen.add(el);
-    return true;
-  });
-}, []);
+    return merged.filter((el) => {
+      if (seen.has(el)) return false;
+      seen.add(el);
+      return true;
+    });
+  }, []);
 
   const focusElement = useCallback(
     (index: number) => {
       const elements = collectFocusableElements();
       if (!elements.length) return;
 
-      const safeIndex = ((index % elements.length) + elements.length) % elements.length;
+      const safeIndex =
+        ((index % elements.length) + elements.length) % elements.length;
+
       const element = elements[safeIndex];
       if (!element) return;
 
@@ -206,32 +225,25 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     setFocusedIndex((prev) => (prev - 1 + elements.length) % elements.length);
   }, [collectFocusableElements]);
 
-const triggerCurrent = useCallback(() => {
-  const elements = collectFocusableElements();
-  if (!elements.length) {
-    setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
-    return;
-  }
+  const triggerCurrent = useCallback(() => {
+    const elements = collectFocusableElements();
+    if (!elements.length) {
+      setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
+      return;
+    }
 
-  const current = elements[focusedIndex] ?? elements[0];
-  if (!current) return;
+    const current = elements[focusedIndex] ?? elements[0];
+    if (!current) return;
 
-  try {
-    current.focus({ preventScroll: true });
-  } catch {
-    current.focus();
-  }
+    try {
+      current.focus({ preventScroll: true });
+    } catch {
+      current.focus();
+    }
 
-  current.dispatchEvent(
-    new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    })
-  );
-
-  setLastEvent("تم تنفيذ الاختيار");
-}, [collectFocusableElements, focusedIndex]);
+    current.click();
+    setLastEvent("تم تنفيذ الاختيار");
+  }, [collectFocusableElements, focusedIndex]);
 
   const deleteFromActiveField = useCallback(() => {
     const active = document.activeElement;
@@ -309,6 +321,25 @@ const triggerCurrent = useCallback(() => {
 
   const executeFinalBlinkAction = useCallback(
     (seconds: number) => {
+      const action: BlinkAction | null =
+        seconds === 1
+          ? "delete"
+          : seconds === 2
+          ? "select"
+          : seconds === 3
+          ? "next"
+          : seconds === 4
+          ? "back"
+          : seconds === 5
+          ? "send"
+          : seconds === 6
+          ? "space"
+          : null;
+
+      if (action && shouldIgnoreAction(action)) {
+        return;
+      }
+
       if (seconds === 1) {
         dispatchBlinkAction("delete");
         if (deleteFromActiveField()) {
@@ -361,7 +392,14 @@ const triggerCurrent = useCallback(() => {
 
       setLastEvent(`تم رصد ${seconds} ثوانٍ`);
     },
-    [deleteFromActiveField, focusNext, insertSpaceToActiveField, sendFromActiveField, triggerCurrent]
+    [
+      deleteFromActiveField,
+      focusNext,
+      insertSpaceToActiveField,
+      sendFromActiveField,
+      shouldIgnoreAction,
+      triggerCurrent,
+    ]
   );
 
   const scheduleFinalAction = useCallback(
