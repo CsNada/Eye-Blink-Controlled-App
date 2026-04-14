@@ -22,7 +22,7 @@ import { useEyeContext } from "../components/EyeContext";
 
 export function HomePage() {
 
-  const { registerButton, currentIndex } = useBlink();
+  // const { registerButton, currentIndex } = useBlink();
   const indexRef = React.useRef(Math.random()); // معرف فريد
 
   const { seconds } = useEyeContext();

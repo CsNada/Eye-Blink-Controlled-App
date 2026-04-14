@@ -21,7 +21,7 @@ export function BlinkControls({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-background via-background to-transparent pb-safe pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-90 bg-gradient-to-t from-background via-background to-transparent pb-safe pointer-events-none">
       <div className="container mx-auto px-4 pb-4">
         {lastEvent && (
           <div className="mb-3 flex justify-center">
@@ -37,7 +37,7 @@ export function BlinkControls({
         <div className={`grid gap-3 ${getGridCols()}`}>
           {showDeleteButton && (
             <div className="relative overflow-hidden rounded-2xl border-2 border-red-200 bg-gradient-to-br from-red-100 to-red-50 shadow-md">
-              <div className="flex min-h-[85px] flex-col items-center justify-center gap-2 p-4 text-center">
+              <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10">
                   <Trash2 className="h-5 w-5 text-red-600" />
                 </div>
@@ -50,7 +50,7 @@ export function BlinkControls({
           )}
 
           <div className="relative overflow-hidden rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-blue-50 shadow-md">
-            <div className="flex min-h-[85px] flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
                 <MousePointer2 className="h-5 w-5 text-blue-600" />
               </div>
@@ -62,7 +62,7 @@ export function BlinkControls({
           </div>
 
           <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-100 to-emerald-50 shadow-md">
-            <div className="flex min-h-[85px] flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
                 <Navigation className="h-5 w-5 text-emerald-600" />
               </div>
@@ -74,7 +74,7 @@ export function BlinkControls({
           </div>
 
           <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-100 to-amber-50 shadow-md">
-            <div className="flex min-h-[85px] flex-col items-center justify-center gap-2 p-4 text-center">
+            <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
                 <ArrowLeft className="h-5 w-5 text-amber-600" />
               </div>
@@ -87,7 +87,7 @@ export function BlinkControls({
 
           {showSendButton && (
             <div className="relative overflow-hidden rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-100 to-violet-50 shadow-md">
-              <div className="flex min-h-[85px] flex-col items-center justify-center gap-2 p-4 text-center">
+              <div className="flex min-h-[80px] flex-col items-center justify-center gap-2 p-4 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
                   <Send className="h-5 w-5 text-violet-600" />
                 </div>
@@ -100,7 +100,7 @@ export function BlinkControls({
           )}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-border/60 bg-card/85 px-4 py-3 text-center shadow-lg backdrop-blur-sm">
+        <div className="mt-4 rounded-2xl border border-border/60 bg-card/85 px-4 py-2 text-center shadow-lg backdrop-blur-sm">
           <p className="text-base font-semibold text-foreground">تعليمات التحكم بالعين</p>
           <p className="mt-1 text-sm text-muted-foreground">
             أغمض عينيك للمدة المطلوبة لتنفيذ الأمر المناسب

@@ -32,7 +32,7 @@ type BlinkContextValue = {
 const BlinkContext = createContext<BlinkContextValue | undefined>(undefined);
 
 const FOCUS_SELECTOR =
-  "button:not([disabled]), a[href], [role='button']:not([aria-disabled='true'])";
+  "button:not([disabled]), a[href], [role='button']:not([aria-disabled='true']), [data-blink-focusable='true']";
 
 const CONFIRMATION_DELAY_MS = 1200;
 
@@ -98,23 +98,23 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
   const pendingTimerRef = useRef<number | null>(null);
 
   const collectFocusableElements = useCallback(() => {
-    if (typeof document === "undefined") return [];
+  if (typeof document === "undefined") return [];
 
-    const domElements = Array.from(
-      document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
-    ).filter(isVisible);
+  const domElements = Array.from(
+    document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
+  ).filter(isVisible);
 
-    const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
+  const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
 
-    const merged = [...domElements, ...manualElements];
-    const seen = new Set<HTMLElement>();
+  const merged = [...manualElements, ...domElements];
+  const seen = new Set<HTMLElement>();
 
-    return merged.filter((el) => {
-      if (seen.has(el)) return false;
-      seen.add(el);
-      return true;
-    });
-  }, []);
+  return merged.filter((el) => {
+    if (seen.has(el)) return false;
+    seen.add(el);
+    return true;
+  });
+}, []);
 
   const focusElement = useCallback(
     (index: number) => {
@@ -206,17 +206,32 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     setFocusedIndex((prev) => (prev - 1 + elements.length) % elements.length);
   }, [collectFocusableElements]);
 
-  const triggerCurrent = useCallback(() => {
-    const elements = collectFocusableElements();
-    if (!elements.length) {
-      setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
-      return;
-    }
+const triggerCurrent = useCallback(() => {
+  const elements = collectFocusableElements();
+  if (!elements.length) {
+    setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
+    return;
+  }
 
-    const current = elements[focusedIndex] ?? elements[0];
-    current?.click?.();
-    setLastEvent("تم تنفيذ الاختيار");
-  }, [collectFocusableElements, focusedIndex]);
+  const current = elements[focusedIndex] ?? elements[0];
+  if (!current) return;
+
+  try {
+    current.focus({ preventScroll: true });
+  } catch {
+    current.focus();
+  }
+
+  current.dispatchEvent(
+    new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    })
+  );
+
+  setLastEvent("تم تنفيذ الاختيار");
+}, [collectFocusableElements, focusedIndex]);
 
   const deleteFromActiveField = useCallback(() => {
     const active = document.activeElement;

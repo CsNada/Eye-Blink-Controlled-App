@@ -1,18 +1,33 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useTheme } from '../contexts/ThemeContext';
-import { Moon, Sun, Globe, ArrowLeft } from 'lucide-react';
-import logoImage from '../../imports/PHOTO-2026-04-02-19-00-15-1.jpeg';
-import { FocusableButton } from './FocusableButton';
+import React, { useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router";
+import { useLanguage } from "../contexts/LanguageContext";
+import { useTheme } from "../contexts/ThemeContext";
+import { Moon, Sun, Globe, ArrowLeft } from "lucide-react";
+import logoImage from "../../imports/PHOTO-2026-04-02-19-00-15-1.jpeg";
+import { FocusableButton } from "./FocusableButton";
+import { useBlink } from "../contexts/BlinkContext";
 
 export function Header() {
+  const blink = useBlink();
+  const langRef = useRef<HTMLButtonElement | null>(null);
+  const themeRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (langRef.current) blink?.registerButton(langRef.current);
+    if (themeRef.current) blink?.registerButton(themeRef.current);
+
+    return () => {
+      if (langRef.current) blink?.unregisterButton(langRef.current);
+      if (themeRef.current) blink?.unregisterButton(themeRef.current);
+    };
+  }, [blink]);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { language, toggleLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
-  const isHome = location.pathname === '/';
+  const isHome = location.pathname === "/";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm">
@@ -22,7 +37,7 @@ export function Header() {
             {!isHome && (
               <FocusableButton
                 index={0}
-                onClick={() => navigate('/', { replace: false })}
+                onClick={() => navigate("/", { replace: false })}
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-100 transition-all duration-200 shadow-sm hover:shadow-md"
                 aria-label="رجوع"
               >
@@ -31,11 +46,7 @@ export function Header() {
             )}
 
             <div className="flex items-center justify-center">
-              <img
-                src={logoImage}
-                alt="Logo"
-                className="h-12 w-12 object-contain"
-              />
+              <img src={logoImage} alt="Logo" className="h-12 w-12 object-contain" />
             </div>
 
             <div className="flex flex-col">
@@ -49,32 +60,34 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            <FocusableButton
-              index={1}
-              role="button" 
+            <button
+              ref={langRef}
+              type="button"
+              data-blink-focusable="true"
               onClick={toggleLanguage}
               className="flex h-10 min-w-10 items-center justify-center gap-2 rounded-xl bg-blue-50 hover:bg-blue-100 px-3 transition-all duration-200 shadow-sm hover:shadow-md"
               aria-label="تبديل اللغة"
             >
               <Globe className="h-4 w-4 text-blue-600" />
               <span className="hidden sm:inline text-sm font-medium text-blue-700">
-                {language === 'en' ? 'عربي' : 'EN'}
+                {language === "en" ? "عربي" : "EN"}
               </span>
-            </FocusableButton>
+            </button>
 
-            <FocusableButton
-              index={2}
-              role="button"
+            <button
+              ref={themeRef}
+              type="button"
+              data-blink-focusable="true"
               onClick={toggleTheme}
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 hover:bg-blue-100 transition-all duration-200 shadow-sm hover:shadow-md"
               aria-label="تبديل الوضع"
             >
-              {theme === 'light' ? (
+              {theme === "light" ? (
                 <Moon className="h-4 w-4 text-blue-600" />
               ) : (
                 <Sun className="h-4 w-4 text-blue-600" />
               )}
-            </FocusableButton>
+            </button>
           </div>
         </div>
       </div>
