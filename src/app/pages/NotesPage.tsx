@@ -10,6 +10,8 @@ import { Textarea } from '../components/ui/textarea';
 import { Input } from '../components/ui/input';
 import { Save, Trash2, FileText, Sparkles, Plus } from 'lucide-react';
 
+import { VoiceInput } from "../components/VoiceInput";
+
 interface Note {
   id: string;
   content: string;
@@ -45,9 +47,11 @@ const DEFAULT_NOTES: Note[] = [
 ];
 
 export function NotesPage() {
+  const { t, language } = useLanguage();
+const voiceLang = language === "ar" ? "ar-SA" : "en-US";
+
   const navigate = useNavigate();
   const blinkContext = useBlink();
-  const { t } = useLanguage();
 
   const [currentNote, setCurrentNote] = useState('');
   const [savedNotes, setSavedNotes] = useState<Note[]>(DEFAULT_NOTES);
@@ -167,12 +171,13 @@ export function NotesPage() {
           </CardHeader>
 
           <CardContent className="space-y-4 pt-6">
-            <Textarea
-              value={currentNote}
-              onChange={(e) => setCurrentNote(e.target.value)}
-              placeholder={t('writeNotePlaceholder')}
-              className="min-h-[250px] text-base border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary/50 resize-none"
-            />
+            <VoiceInput
+  value={currentNote}
+  onChange={setCurrentNote}
+  onSubmit={handleSaveNote}
+  lang={voiceLang}
+  placeholder={t("typeYourNote")}
+/>
 
             <div className="flex gap-3">
               <FocusableButton
