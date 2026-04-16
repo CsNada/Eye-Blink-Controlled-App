@@ -1,506 +1,131 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { useBlink } from "../contexts/BlinkContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { FocusableButton } from "../components/FocusableButton";
+import { VoiceInput } from "../components/VoiceInput";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { Search, SquareArrowOutUpRight } from "lucide-react";
 
-type BlinkAction = "select" | "next" | "back" | "delete" | "send" | "space";
+export function BrowserPage() {
+  const navigate = useNavigate();
+  const { t, language } = useLanguage();
+  const blink = useBlink();
 
-type BlinkControlApi = {
-  select: () => void;
-  navigate: () => void;
-  back: () => void;
-  delete: () => void;
-  send: () => void;
-  space: () => void;
-};
+  const [url, setUrl] = useState("");
+  const [currentUrl, setCurrentUrl] = useState("https://www.wikipedia.org");
 
-type BlinkContextValue = {
-  focusedIndex: number;
-  lastEvent: string | null;
-  registerButton: (el: HTMLElement | null) => void;
-  unregisterButton: (el: HTMLElement | null) => void;
-  focusNext: () => void;
-  focusPrevious: () => void;
-  triggerCurrent: () => void;
-};
+  const voiceLang = language === "ar" ? "ar-SA" : "en-US";
 
-const BlinkContext = createContext<BlinkContextValue | undefined>(undefined);
-
-const FOCUS_SELECTOR =
-  "button:not([disabled]), a[href], [role='button']:not([aria-disabled='true']), [data-blink-focusable='true']";
-
-const CONFIRMATION_DELAY_MS = 1200;
-const ACTION_COOLDOWN_MS = 700;
-
-function isVisible(el: HTMLElement) {
-  if (typeof window === "undefined") return false;
-
-  const style = window.getComputedStyle(el);
-  const rect = el.getBoundingClientRect();
-
-  return (
-    style.display !== "none" &&
-    style.visibility !== "hidden" &&
-    style.opacity !== "0" &&
-    rect.width > 0 &&
-    rect.height > 0 &&
-    !el.hasAttribute("hidden") &&
-    el.getAttribute("aria-hidden") !== "true"
-  );
-}
-
-function isTextTarget(
-  el: Element | null
-): el is HTMLInputElement | HTMLTextAreaElement {
-  if (!el) return false;
-
-  return (
-    (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) &&
-    !el.disabled &&
-    !el.readOnly
-  );
-}
-
-function setNativeValue(
-  element: HTMLInputElement | HTMLTextAreaElement,
-  value: string
-) {
-  const proto =
-    element instanceof HTMLTextAreaElement
-      ? HTMLTextAreaElement.prototype
-      : HTMLInputElement.prototype;
-
-  const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
-  descriptor?.set?.call(element, value);
-}
-
-function emitInputEvents(element: HTMLInputElement | HTMLTextAreaElement) {
-  element.dispatchEvent(new Event("input", { bubbles: true }));
-  element.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function dispatchBlinkAction(action: BlinkAction) {
-  window.dispatchEvent(
-    new CustomEvent("blinkAction", {
-      detail: { action },
-    })
-  );
-}
-
-export function BlinkProvider({ children }: { children: React.ReactNode }) {
-  const [focusedIndex, setFocusedIndex] = useState(0);
-  const [lastEvent, setLastEvent] = useState<string | null>("جاهز للتحكم بالعين");
-
-  const manualButtonsRef = useRef<Set<HTMLElement>>(new Set());
-  const pendingSecondsRef = useRef<number | null>(null);
-  const pendingTimerRef = useRef<number | null>(null);
-  const lastExecutionRef = useRef<{ seconds: number | null; time: number }>({
-    seconds: null,
-    time: 0,
-  });
-
-  const shouldIgnoreExecution = useCallback((seconds: number) => {
-    const now = Date.now();
-    const last = lastExecutionRef.current;
-
-    if (last.seconds === seconds && now - last.time < ACTION_COOLDOWN_MS) {
-      return true;
-    }
-
-    lastExecutionRef.current = { seconds, time: now };
-    return false;
-  }, []);
-
-  const collectFocusableElements = useCallback(() => {
-    if (typeof document === "undefined") return [];
-
-    const domElements = Array.from(
-      document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
-    ).filter(isVisible);
-
-    const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
-
-    const merged = [...domElements, ...manualElements];
-    const seen = new Set<HTMLElement>();
-
-    return merged.filter((el) => {
-      if (seen.has(el)) return false;
-      seen.add(el);
-      return true;
-    });
-  }, []);
-
-  const focusElement = useCallback(
-    (index: number) => {
-      const elements = collectFocusableElements();
-      if (!elements.length) return;
-
-      const safeIndex =
-        ((index % elements.length) + elements.length) % elements.length;
-
-      const element = elements[safeIndex];
-      if (!element) return;
-
-      setFocusedIndex(safeIndex);
-
-      try {
-        element.focus({ preventScroll: true });
-      } catch {
-        element.focus();
-      }
-
-      try {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "center",
-        });
-      } catch {
-        // ignore
-      }
-    },
-    [collectFocusableElements]
-  );
+  const bookmarks = [
+    { name: "Wikipedia", url: "https://www.wikipedia.org" },
+    { name: "Google Scholar", url: "https://scholar.google.com" },
+    { name: "PubMed", url: "https://pubmed.ncbi.nlm.nih.gov" },
+    { name: "Khan Academy", url: "https://www.khanacademy.org" },
+    { name: "Coursera", url: "https://www.coursera.org" },
+    { name: "edX", url: "https://www.edx.org" },
+  ];
 
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    const setOnBack = blink?.setOnBack ?? (() => {});
+    setOnBack(() => navigate("/", { replace: false }));
+    return () => setOnBack(null);
+  }, [blink, navigate]);
 
-    const styleId = "blink-focus-ring-style";
-    if (document.getElementById(styleId)) return;
+  const handleGo = () => {
+    const next = url.trim();
+    if (!next) return;
 
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.textContent = `
-      .blink-focus-ring {
-        outline: 4px solid rgba(59, 130, 246, 0.95) !important;
-        outline-offset: 4px !important;
-        box-shadow:
-          0 0 0 6px rgba(59, 130, 246, 0.18),
-          0 14px 34px rgba(37, 99, 235, 0.25) !important;
-        transform: scale(1.03) !important;
-        transition: transform 160ms ease, box-shadow 160ms ease, outline-color 160ms ease;
-        z-index: 90 !important;
-        position: relative !important;
-      }
-    `;
-    document.head.appendChild(style);
+    const finalUrl =
+      next.startsWith("http://") || next.startsWith("https://")
+        ? next
+        : `https://${next}`;
 
-    return () => {
-      style.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    const elements = collectFocusableElements();
-    if (!elements.length) return;
-
-    if (focusedIndex >= elements.length) {
-      setFocusedIndex(0);
-      focusElement(0);
-      return;
-    }
-
-    const active = elements[focusedIndex];
-    if (active) {
-      elements.forEach((el) => el.classList.remove("blink-focus-ring"));
-      active.classList.add("blink-focus-ring");
-      focusElement(focusedIndex);
-    }
-  }, [collectFocusableElements, focusElement, focusedIndex]);
-
-  const focusNext = useCallback(() => {
-    const elements = collectFocusableElements();
-    if (!elements.length) return;
-
-    setFocusedIndex((prev) => (prev + 1) % elements.length);
-  }, [collectFocusableElements]);
-
-  const focusPrevious = useCallback(() => {
-    const elements = collectFocusableElements();
-    if (!elements.length) return;
-
-    setFocusedIndex((prev) => (prev - 1 + elements.length) % elements.length);
-  }, [collectFocusableElements]);
-
-  const triggerCurrent = useCallback(() => {
-    const elements = collectFocusableElements();
-    if (!elements.length) {
-      setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
-      return;
-    }
-
-    const current = elements[focusedIndex] ?? elements[0];
-    if (!current) return;
-
-    try {
-      current.focus({ preventScroll: true });
-    } catch {
-      current.focus();
-    }
-
-    current.click();
-    setLastEvent("تم تنفيذ الاختيار");
-  }, [collectFocusableElements, focusedIndex]);
-
-  const deleteFromActiveField = useCallback(() => {
-    const active = document.activeElement;
-
-    if (!isTextTarget(active)) return false;
-
-    const { selectionStart, selectionEnd, value } = active;
-    const start = selectionStart ?? value.length;
-    const end = selectionEnd ?? value.length;
-
-    let nextValue = value;
-    let nextCaret = start;
-
-    if (start !== end) {
-      nextValue = value.slice(0, start) + value.slice(end);
-      nextCaret = start;
-    } else if (start > 0) {
-      nextValue = value.slice(0, start - 1) + value.slice(end);
-      nextCaret = start - 1;
-    }
-
-    setNativeValue(active, nextValue);
-    emitInputEvents(active);
-
-    try {
-      active.setSelectionRange(nextCaret, nextCaret);
-    } catch {
-      // ignore
-    }
-
-    return true;
-  }, []);
-
-  const insertSpaceToActiveField = useCallback(() => {
-    const active = document.activeElement;
-
-    if (!isTextTarget(active)) return false;
-
-    const { selectionStart, selectionEnd, value } = active;
-    const start = selectionStart ?? value.length;
-    const end = selectionEnd ?? value.length;
-
-    const nextValue = value.slice(0, start) + " " + value.slice(end);
-    const nextCaret = start + 1;
-
-    setNativeValue(active, nextValue);
-    emitInputEvents(active);
-
-    try {
-      active.setSelectionRange(nextCaret, nextCaret);
-    } catch {
-      // ignore
-    }
-
-    return true;
-  }, []);
-
-  const sendFromActiveField = useCallback(() => {
-    const active = document.activeElement;
-
-    if (isTextTarget(active)) {
-      const form = active.closest("form") as HTMLFormElement | null;
-      if (form?.requestSubmit) {
-        form.requestSubmit();
-        return true;
-      }
-
-      active.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", bubbles: true })
-      );
-      active.dispatchEvent(
-        new KeyboardEvent("keyup", { key: "Enter", bubbles: true })
-      );
-      return true;
-    }
-
-    return false;
-  }, []);
-
-  const executeFinalBlinkAction = useCallback(
-    (seconds: number) => {
-      if (shouldIgnoreExecution(seconds)) {
-        return;
-      }
-
-      if (seconds === 1) {
-        dispatchBlinkAction("delete");
-        // if (deleteFromActiveField()) {
-        //   setLastEvent("تم الحذف");
-        // } else {
-        //   setLastEvent("أمر الحذف غير متاح هنا");
-        // }
-        return;
-      }
-
-      if (seconds === 2) {
-        triggerCurrent();
-        return;
-      }
-
-      if (seconds === 3) {
-        dispatchBlinkAction("next");
-        focusNext();
-        setLastEvent("تم الانتقال إلى العنصر التالي");
-        return;
-      }
-
-      if (seconds === 4) {
-        dispatchBlinkAction("back");
-        window.history.back();
-        setLastEvent("تم الرجوع");
-        return;
-      }
-
-      if (seconds === 5) {
-  dispatchBlinkAction("send");
-
-  // const success = sendFromActiveField();
-
-  // const isKeyboardActive = document.querySelector(
-  //   "[data-keyboard-root]:focus-within"
-  // );
-
-  // if (success) {
-  //   setLastEvent("تم الإرسال");
-  // } else if (isKeyboardActive) {
-  //   setLastEvent("تم تنفيذ أمر الإرسال");
-  // } else {
-  //   setLastEvent("أمر الإرسال غير متاح هنا");
-  // }
-
-  return;
-}
-
-      if (seconds === 6) {
-  dispatchBlinkAction("space");
-
-  // const success = insertSpaceToActiveField();
-
-  // const isKeyboardActive = document.querySelector(
-  //   "[data-keyboard-root]:focus-within"
-  // );
-
-  // if (success) {
-  //   setLastEvent("تمت إضافة مسافة");
-  // } else if (isKeyboardActive) {
-  //   setLastEvent("تم تنفيذ أمر المسافة");
-  // } else {
-  //   setLastEvent("أمر المسافة غير متاح هنا");
-  // }
-
-  return;
-}
-
-      setLastEvent(`تم رصد ${seconds} ثوانٍ`);
-    },
-    [
-      deleteFromActiveField,
-      focusNext,
-      insertSpaceToActiveField,
-      sendFromActiveField,
-      shouldIgnoreExecution,
-      triggerCurrent,
-    ]
-  );
-
-  const scheduleFinalAction = useCallback(
-    (seconds: number) => {
-      pendingSecondsRef.current = seconds;
-
-      if (pendingTimerRef.current) {
-        window.clearTimeout(pendingTimerRef.current);
-      }
-
-      pendingTimerRef.current = window.setTimeout(() => {
-        if (pendingSecondsRef.current === seconds) {
-          executeFinalBlinkAction(seconds);
-          pendingSecondsRef.current = null;
-        }
-      }, CONFIRMATION_DELAY_MS);
-    },
-    [executeFinalBlinkAction]
-  );
-
-  useEffect(() => {
-    const onBlinkEvent = (event: Event) => {
-      const customEvent = event as CustomEvent<{ seconds?: number }>;
-      const seconds = customEvent.detail?.seconds;
-
-      if (typeof seconds === "number") {
-        scheduleFinalAction(seconds);
-      }
-    };
-
-    const blinkControl = {
-      select: () => scheduleFinalAction(2),
-      navigate: () => scheduleFinalAction(3),
-      back: () => scheduleFinalAction(4),
-      delete: () => scheduleFinalAction(1),
-      send: () => scheduleFinalAction(5),
-      space: () => scheduleFinalAction(6),
-    } satisfies BlinkControlApi;
-
-    const w = window as Window & { blinkControl?: BlinkControlApi };
-    w.blinkControl = blinkControl;
-
-    window.addEventListener("blinkEvent", onBlinkEvent as EventListener);
-
-    return () => {
-      window.removeEventListener("blinkEvent", onBlinkEvent as EventListener);
-
-      if (pendingTimerRef.current) {
-        window.clearTimeout(pendingTimerRef.current);
-      }
-
-      if (w.blinkControl) delete w.blinkControl;
-    };
-  }, [scheduleFinalAction]);
-
-  const registerButton = useCallback((el: HTMLElement | null) => {
-    if (!el) return;
-    manualButtonsRef.current.add(el);
-  }, []);
-
-  const unregisterButton = useCallback((el: HTMLElement | null) => {
-    if (!el) return;
-    manualButtonsRef.current.delete(el);
-  }, []);
-
-  const value = useMemo<BlinkContextValue>(
-    () => ({
-      focusedIndex,
-      lastEvent,
-      registerButton,
-      unregisterButton,
-      focusNext,
-      focusPrevious,
-      triggerCurrent,
-    }),
-    [
-      focusedIndex,
-      lastEvent,
-      registerButton,
-      unregisterButton,
-      focusNext,
-      focusPrevious,
-      triggerCurrent,
-    ]
-  );
+    setCurrentUrl(finalUrl);
+    setUrl("");
+  };
 
   return (
-    <BlinkContext.Provider value={value}>{children}</BlinkContext.Provider>
-  );
-}
+    <div className="container mx-auto px-4 py-8 pb-32 animate-in fade-in duration-500">
+      <h2 className="text-3xl font-bold mb-6">{t("browserTitle")}</h2>
 
-export function useBlink() {
-  return useContext(BlinkContext);
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("urlBar") ?? "شريط الرابط"}</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <VoiceInput
+              value={url}
+              onChange={setUrl}
+              onSubmit={handleGo}
+              lang={voiceLang}
+              multiline={false}
+              placeholder={t("urlPlaceholder")}
+            />
+
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleGo();
+                }}
+                placeholder={t("urlPlaceholder")}
+                className="text-lg min-h-[56px]"
+              />
+
+              <Button onClick={handleGo} className="min-h-[56px] min-w-[100px]">
+                <Search className="h-5 w-5 mr-2" />
+                {t("go")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("bookmarks")}</CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {bookmarks.map((bookmark, index) => (
+                <FocusableButton
+                  key={bookmark.name}
+                  index={index}
+                  onClick={() => setCurrentUrl(bookmark.url)}
+                  variant="outline"
+                  className="min-h-[84px] flex-col"
+                >
+                  <SquareArrowOutUpRight className="h-5 w-5 mb-2" />
+                  <span className="text-sm font-medium">{bookmark.name}</span>
+                </FocusableButton>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("browserPreview") ?? "المعاينة"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-2xl border bg-background">
+              <iframe
+                key={currentUrl}
+                src={currentUrl}
+                title="Browser preview"
+                className="w-full h-[70vh] min-h-[520px]"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
