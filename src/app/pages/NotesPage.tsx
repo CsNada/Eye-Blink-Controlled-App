@@ -32,41 +32,19 @@ const DEFAULT_NOTES: Note[] = [
     content: "جلسة العلاج الطبيعي يوم الثلاثاء الساعة 3 عصراً",
     date: new Date("2024-03-30").toLocaleString("ar-SA"),
   },
-  {
-    id: "4",
-    content: "ملاحظات عن تمارين التنفس اليومية",
-    date: new Date("2024-03-29").toLocaleString("ar-SA"),
-  },
-  {
-    id: "5",
-    content: "تواصل مع الطبيب بخصوص نتائج الفحوصات",
-    date: new Date("2024-03-28").toLocaleString("ar-SA"),
-  },
 ];
 
 export function NotesPage() {
-  const { t, language } = useLanguage();
-  const voiceLang = language === "ar" ? "ar-SA" : "en-US";
-
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const blink = useBlink();
-  const setMode = blink?.setMode ?? (() => {});
-  const focusedIndex = blink?.focusedIndex ?? 0;
-  const setTotalItems = blink?.setTotalItems ?? (() => {});
-  const setOnSelect = blink?.setOnSelect ?? (() => {});
-  const setOnBack = blink?.setOnBack ?? (() => {});
-  const setOnDelete = blink?.setOnDelete ?? (() => {});
+  const setMode = blink?.setMode ?? (() => { });
+  const voiceLang = language === "ar" ? "ar-SA" : "en-US";
 
   const [currentNote, setCurrentNote] = useState("");
   const [savedNotes, setSavedNotes] = useState<Note[]>(DEFAULT_NOTES);
   const [quickNote, setQuickNote] = useState("");
   const [showKeyboard, setShowKeyboard] = useState(false);
-
-  const totalItems = useMemo(() => 4 + savedNotes.length, [savedNotes.length]);
-
-  useEffect(() => {
-    setTotalItems(totalItems);
-  }, [setTotalItems, totalItems]);
 
   const handleSaveNote = () => {
     const next = currentNote.trim();
@@ -98,64 +76,14 @@ export function NotesPage() {
     setQuickNote("");
   };
 
-  const handleDeleteNote = (id: string) => {
-    setSavedNotes((prev) => prev.filter((note) => note.id !== id));
-  };
-
-  useEffect(() => {
-    setOnSelect(() => {
-      if (focusedIndex === 0) {
-        handleSaveNote();
-        return;
-      }
-
-      if (focusedIndex === 1) {
-        setCurrentNote("");
-        return;
-      }
-
-      if (focusedIndex === 2) {
-        setShowKeyboard((prev) => {
-          const next = !prev;
-          setMode(next ? "keyboard" : "normal");
-          return next;
-        });
-        return;
-      }
-
-      if (focusedIndex === 3) {
-        handleQuickAddNote();
-        return;
-      }
-
-      const noteIndex = focusedIndex - 4;
-      if (noteIndex >= 0 && noteIndex < savedNotes.length) {
-        handleDeleteNote(savedNotes[noteIndex].id);
-      }
-    });
-  }, [setOnSelect, focusedIndex, savedNotes, currentNote, quickNote, setMode]);
-
-  useEffect(() => {
-    setOnBack(() => {
-      navigate("/", { replace: false });
-    });
-  }, [setOnBack, navigate]);
-
-  useEffect(() => {
-    setOnDelete(() => {
-      setCurrentNote("");
-    });
-
-    return () => {
-      setOnDelete(null);
-    };
-  }, [setOnDelete]);
+  const noteCardBase = 100;
+  const quickBase = 200;
 
   return (
     <div className="container mx-auto px-4 py-8 pb-32 animate-in fade-in duration-500">
       <h2 className="text-3xl font-bold mb-6">{t("notesTitle")}</h2>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_400px] md:items-start">
         <div className="space-y-6">
           <Card className="border border-border shadow-lg">
             <CardHeader>
@@ -165,8 +93,25 @@ export function NotesPage() {
               </CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-4 pt-6">
+            <FocusableButton
+              index={10}
+              onClick={() => {
+                setShowKeyboard((prev) => {
+                  const next = !prev;
+                  setMode(next ? "keyboard" : "normal");
+                  return next;
+                });
+              }}
+              variant="outline"
+              className="min-h-[56px] mx-6"
+            >
+              <Keyboard className="h-4 w-4 ml-2" />
+              {showKeyboard ? "إغلاق لوحة المفاتيح" : "فتح لوحة المفاتيح"}
+            </FocusableButton>
+
+            <CardContent className="space-y-4">
               <VoiceInput
+                blinkBaseIndex={11}
                 value={currentNote}
                 onChange={setCurrentNote}
                 onSubmit={handleSaveNote}
@@ -174,54 +119,10 @@ export function NotesPage() {
                 placeholder={t("typeYourNote")}
               />
 
-              <Textarea
-                value={currentNote}
-                onChange={(e) => setCurrentNote(e.target.value)}
-                placeholder={t("typeYourNote")}
-                className="min-h-[140px] text-lg"
-                dir={language === "ar" ? "rtl" : "ltr"}
-              />
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <FocusableButton
-                  index={0}
-                  onClick={handleSaveNote}
-                  className="min-h-[56px] bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  <Save className="h-4 w-4 ml-2" />
-                  {t("save") ?? "حفظ"}
-                </FocusableButton>
-
-                <FocusableButton
-                  index={1}
-                  onClick={() => setCurrentNote("")}
-                  variant="outline"
-                  className="min-h-[56px]"
-                >
-                  <Trash2 className="h-4 w-4 ml-2" />
-                  {t("clear") ?? "مسح"}
-                </FocusableButton>
-
-                <FocusableButton
-                  index={2}
-                  onClick={() => {
-                    setShowKeyboard((prev) => {
-                      const next = !prev;
-                      setMode(next ? "keyboard" : "normal");
-                      return next;
-                    });
-                  }}
-                  variant="outline"
-                  className="min-h-[56px]"
-                >
-                  <Keyboard className="h-4 w-4 ml-2" />
-                  {showKeyboard ? "إغلاق لوحة المفاتيح" : "فتح لوحة المفاتيح"}
-                </FocusableButton>
-              </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-border shadow-lg">
+          {/* <Card className="border border-border shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" />
@@ -231,6 +132,7 @@ export function NotesPage() {
 
             <CardContent className="space-y-4">
               <Input
+                data-blink-index={30}
                 value={quickNote}
                 onChange={(e) => setQuickNote(e.target.value)}
                 placeholder={t("quickAddNote") ?? "إضافة ملاحظة سريعة..."}
@@ -239,7 +141,7 @@ export function NotesPage() {
               />
 
               <FocusableButton
-                index={3}
+                index={31}
                 onClick={handleQuickAddNote}
                 className="min-h-[56px] w-full bg-emerald-500 hover:bg-emerald-600 text-white"
               >
@@ -247,7 +149,7 @@ export function NotesPage() {
                 {t("add") ?? "إضافة"}
               </FocusableButton>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="border border-border shadow-lg">
             <CardHeader>
@@ -278,7 +180,7 @@ export function NotesPage() {
                           </div>
 
                           <FocusableButton
-                            index={4 + index}
+                            index={noteCardBase + index}
                             onClick={() =>
                               setSavedNotes((prev) =>
                                 prev.filter((item) => item.id !== note.id)
@@ -300,10 +202,10 @@ export function NotesPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-24">
           {showKeyboard ? (
             <ScanningKeyboard
-              className="xl:sticky xl:top-24"
+              className="w-full"
               value={currentNote}
               onChange={setCurrentNote}
               onSend={handleSaveNote}
@@ -313,12 +215,12 @@ export function NotesPage() {
               }}
             />
           ) : (
-            <Card className="border border-dashed bg-muted/30 xl:sticky xl:top-24">
+            <Card className="border border-dashed bg-muted/30">
               <CardContent className="p-6 text-center text-muted-foreground leading-7">
                 <Keyboard className="mx-auto mb-3 h-10 w-10 opacity-70" />
                 {language === "ar"
-                  ? "افتح لوحة المفاتيح لتظهر بجانب خانة الإدخال على اللابتوب."
-                  : "Open the keyboard to show it beside the input on desktop."}
+                  ? "ستظهر لوحة المفاتح هنا عند فتحها"
+                  : "Open the keyboard to show it beside the input on larger screens."}
               </CardContent>
             </Card>
           )}

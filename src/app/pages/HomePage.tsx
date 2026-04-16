@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useBlink } from '../contexts/BlinkContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AutoScanButton } from '../components/AutoScanButton';
 import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import {
-  BookOpen,
   FileText,
   Bell,
   MessageSquare,
@@ -18,35 +16,14 @@ import {
   GraduationCap,
 } from 'lucide-react';
 
-import { useEyeContext } from "../components/EyeContext";
-
 export function HomePage() {
-
-  // const { registerButton, currentIndex } = useBlink();
-  const indexRef = React.useRef(Math.random()); // معرف فريد
-
-  const { seconds } = useEyeContext();
-
-  useEffect(() => {
-    if (seconds >= 2) {
-      console.log("⚠️ Page1 warning");
-    }
-
-    if (seconds >= 4) {
-      console.log("🔥 Page1 action");
-    }
-  }, [seconds]);
-
-
   const navigate = useNavigate();
   const blinkContext = useBlink();
   const { language, t } = useLanguage();
-  const [autoScanIndex, setAutoScanIndex] = useState(0);
 
   // Safely access context functions with fallbacks
-  const setTotalItems = blinkContext?.setTotalItems ?? (() => { });
-  const setOnSelect = blinkContext?.setOnSelect ?? (() => { });
-  const setOnBack = blinkContext?.setOnBack ?? (() => { });
+  const setTotalItems = blinkContext?.setTotalItems ?? (() => {});
+  // const setOnBack = blinkContext?.setOnBack ?? (() => {});
 
   // Define reminders based on language
   const REMINDERS = [
@@ -68,39 +45,15 @@ export function HomePage() {
   ];
 
   useEffect(() => {
-    // Total items = quick actions (4 now: Notes, Messages, Reminders, Student Profile)
-    setTotalItems(4);
+    // Total items = all interactive cards on this page
+    // Header already has its own focusable items (language/theme/back)
+    setTotalItems(18);
   }, [setTotalItems]);
 
-  // Auto-scanning for Quick Actions: cycles through items every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAutoScanIndex(prev => (prev + 1) % 4);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    setOnSelect(() => {
-      // Use auto-scan index for selection
-      if (autoScanIndex === 0) {
-        navigate('/notes');
-      } else if (autoScanIndex === 1) {
-        navigate('/messages');
-      } else if (autoScanIndex === 2) {
-        navigate('/reminders');
-      } else if (autoScanIndex === 3) {
-        navigate('/student-profile');
-      }
-    });
-  }, [setOnSelect, autoScanIndex, navigate]);
-
-  useEffect(() => {
-    setOnBack(() => {
-      // On home page, back does nothing
-    });
-  }, [setOnBack]);
+  // useEffect(() => {
+  //   // On home page, back does nothing
+  //   setOnBack(() => {});
+  // }, [setOnBack]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl relative">
@@ -130,7 +83,9 @@ export function HomePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="h-5 w-5 text-blue-500 animate-pulse" />
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">{t('welcome')}</h2>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
+                    {t('welcome')}
+                  </h2>
                 </div>
                 <p className="text-muted-foreground text-base mb-2">
                   {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
@@ -154,8 +109,10 @@ export function HomePage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Notes - Featured/Larger Card */}
-            <Card role="button"
-              tabIndex={4}
+            <Card
+              role="button"
+              tabIndex={3}
+              data-blink-index={3}
               className="overflow-hidden border-2 border-emerald-300/70 bg-gradient-to-br from-emerald-100/70 via-teal-50/60 to-white shadow-2xl hover:shadow-[0_20px_50px_rgba(16,185,129,0.25)] transition-all duration-500 cursor-pointer group md:col-span-2 relative hover:scale-[1.02]"
               onClick={() => navigate('/notes')}
             >
@@ -179,7 +136,8 @@ export function HomePage() {
             {/* Messages */}
             <Card
               role="button"
-              tabIndex={5}
+              tabIndex={4}
+              data-blink-index={4}
               onClick={() => navigate('/messages')}
               className="overflow-hidden border-2 border-blue-300/60 shadow-xl hover:shadow-[0_15px_40px_rgba(59,130,246,0.2)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02] bg-gradient-to-br from-blue-100/60 via-cyan-50/40 to-white"
             >
@@ -200,8 +158,10 @@ export function HomePage() {
             </Card>
 
             {/* Student Profile */}
-            <Card role="button"
-              tabIndex={6}
+            <Card
+              role="button"
+              tabIndex={5}
+              data-blink-index={5}
               className="overflow-hidden border-2 border-purple-300/60 shadow-xl hover:shadow-[0_15px_40px_rgba(168,85,247,0.2)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02] bg-gradient-to-br from-purple-100/60 via-pink-50/40 to-white"
               onClick={() => navigate('/student-profile')}
             >
@@ -231,8 +191,10 @@ export function HomePage() {
           </h3>
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('platformsSubtitle')}</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card role="button"
-              tabIndex={7}
+            <Card
+              role="button"
+              tabIndex={6}
+              data-blink-index={6}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-blue-200/70 bg-gradient-to-br from-blue-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] hover:border-blue-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -246,8 +208,10 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card role="button"
-              tabIndex={8}
+            <Card
+              role="button"
+              tabIndex={7}
+              data-blink-index={7}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-indigo-200/70 bg-gradient-to-br from-indigo-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(99,102,241,0.15)] hover:border-indigo-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -261,8 +225,10 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card role="button"
-              tabIndex={9}
+            <Card
+              role="button"
+              tabIndex={8}
+              data-blink-index={8}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-purple-200/70 bg-gradient-to-br from-purple-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(168,85,247,0.15)] hover:border-purple-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -276,8 +242,10 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card role="button"
-              tabIndex={10}
+            <Card
+              role="button"
+              tabIndex={9}
+              data-blink-index={9}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-red-200/70 bg-gradient-to-br from-red-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(239,68,68,0.15)] hover:border-red-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -291,8 +259,10 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card role="button"
-              tabIndex={11}
+            <Card
+              role="button"
+              tabIndex={10}
+              data-blink-index={10}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-slate-200/70 bg-gradient-to-br from-slate-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(100,116,139,0.15)] hover:border-slate-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -306,8 +276,10 @@ export function HomePage() {
               </CardContent>
             </Card>
 
-            <Card role="button"
-              tabIndex={12}
+            <Card
+              role="button"
+              tabIndex={11}
+              data-blink-index={11}
               onClick={() => navigate('/educational-platforms')}
               className="overflow-hidden border-2 border-teal-200/70 bg-gradient-to-br from-teal-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(20,184,166,0.15)] hover:border-teal-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
@@ -330,8 +302,10 @@ export function HomePage() {
             {t('filesTitle')}
           </h3>
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('filesSubtitle')}</p>
-          <Card role="button"
-              tabIndex={13}
+          <Card
+            role="button"
+            tabIndex={12}
+            data-blink-index={12}
             onClick={() => navigate('/files')}
             className="overflow-hidden border-2 border-indigo-300/70 bg-gradient-to-br from-indigo-100/70 via-purple-50/60 to-white shadow-2xl hover:shadow-[0_20px_50px_rgba(99,102,241,0.25)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02]"
           >
@@ -363,8 +337,10 @@ export function HomePage() {
             {t('browsers')}
           </h3>
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('browsersSubtitle')}</p>
-          <Card role="button"
-              tabIndex={14}
+          <Card
+            role="button"
+            tabIndex={13}
+            data-blink-index={13}
             onClick={() => navigate('/browsers')}
             className="overflow-hidden border-2 border-cyan-300/70 bg-gradient-to-br from-cyan-100/70 via-blue-50/60 to-white shadow-2xl hover:shadow-[0_20px_50px_rgba(6,182,212,0.25)] transition-all duration-500 cursor-pointer group relative hover:scale-[1.02]"
           >
@@ -397,12 +373,17 @@ export function HomePage() {
           </h3>
           <div className="grid gap-3">
             {REMINDERS.map((reminder, index) => (
-              <Card key={index} className="group overflow-hidden border border-border/60 shadow-md hover:shadow-lg transition-all duration-300 relative bg-gradient-to-r from-white to-blue-50/20">
+              <Card
+                key={index}
+                className="group overflow-hidden border border-border/60 shadow-md hover:shadow-lg transition-all duration-300 relative bg-gradient-to-r from-white to-blue-50/20"
+              >
                 <div className={`h-1 bg-gradient-to-r ${reminder.gradient}`} />
                 <CardContent className="p-4 relative">
                   <div className="flex justify-between items-center">
                     <span className="text-base font-medium">{reminder.title}</span>
-                    <div className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${reminder.gradient} text-white text-sm font-semibold shadow-md group-hover:shadow-lg transition-shadow`}>
+                    <div
+                      className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${reminder.gradient} text-white text-sm font-semibold shadow-md group-hover:shadow-lg transition-shadow`}
+                    >
                       {reminder.time}
                     </div>
                   </div>
@@ -421,68 +402,72 @@ export function HomePage() {
           <p className="text-xs text-blue-600/60 mb-4 font-medium">{t('quickActionsSubtitle')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {/* Notes */}
-            <AutoScanButton
-              index={20}
-              autoScanIndex={autoScanIndex}
+            <Card
+              role="button"
+              tabIndex={14}
+              data-blink-index={14}
               onClick={() => navigate('/notes')}
-              className="group h-auto p-0 overflow-hidden border-2 border-emerald-200/70 bg-gradient-to-br from-emerald-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(16,185,129,0.2)] hover:border-emerald-300 transition-all duration-500 hover:scale-105 relative"
+              className="group h-auto p-0 overflow-hidden border-2 border-emerald-200/70 bg-gradient-to-br from-emerald-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(16,185,129,0.2)] hover:border-emerald-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-emerald-200/20 to-transparent rounded-full blur-xl" />
               <div className="w-full p-5 flex flex-col items-center gap-3 relative">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-200 to-emerald-100 group-hover:from-emerald-300 group-hover:to-emerald-200 group-focus:from-emerald-300 group-focus:to-emerald-200 transition-all shadow-md ring-2 ring-emerald-300/30 group-hover:ring-emerald-400/50">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-200 to-emerald-100 group-hover:from-emerald-300 group-hover:to-emerald-200 transition-all shadow-md ring-2 ring-emerald-300/30 group-hover:ring-emerald-400/50">
                   <FileText className="h-7 w-7 text-emerald-700" strokeWidth={2} />
                 </div>
                 <span className="text-sm font-bold text-emerald-900">{t('notes')}</span>
               </div>
-            </AutoScanButton>
+            </Card>
 
             {/* Messages */}
-            <AutoScanButton
-              index={21}
-              autoScanIndex={autoScanIndex}
+            <Card
+              role="button"
+              tabIndex={15}
+              data-blink-index={15}
               onClick={() => navigate('/messages')}
-              className="group h-auto p-0 overflow-hidden border-2 border-blue-200/70 bg-gradient-to-br from-blue-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(59,130,246,0.2)] hover:border-blue-300 transition-all duration-500 hover:scale-105 relative"
+              className="group h-auto p-0 overflow-hidden border-2 border-blue-200/70 bg-gradient-to-br from-blue-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(59,130,246,0.2)] hover:border-blue-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-blue-200/20 to-transparent rounded-full blur-xl" />
               <div className="w-full p-5 flex flex-col items-center gap-3 relative">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-200 to-blue-100 group-hover:from-blue-300 group-hover:to-blue-200 group-focus:from-blue-300 group-focus:to-blue-200 transition-all shadow-md ring-2 ring-blue-300/30 group-hover:ring-blue-400/50">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-200 to-blue-100 group-hover:from-blue-300 group-hover:to-blue-200 transition-all shadow-md ring-2 ring-blue-300/30 group-hover:ring-blue-400/50">
                   <MessageSquare className="h-7 w-7 text-blue-700" strokeWidth={2} />
                 </div>
                 <span className="text-sm font-bold text-blue-900">{t('messages')}</span>
               </div>
-            </AutoScanButton>
+            </Card>
 
             {/* Reminders */}
-            <AutoScanButton
-              index={22}
-              autoScanIndex={autoScanIndex}
+            <Card
+              role="button"
+              tabIndex={16}
+              data-blink-index={16}
               onClick={() => navigate('/reminders')}
-              className="group h-auto p-0 overflow-hidden border-2 border-amber-200/70 bg-gradient-to-br from-amber-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(251,191,36,0.2)] hover:border-amber-300 transition-all duration-500 hover:scale-105 relative"
+              className="group h-auto p-0 overflow-hidden border-2 border-amber-200/70 bg-gradient-to-br from-amber-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(251,191,36,0.2)] hover:border-amber-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-amber-200/20 to-transparent rounded-full blur-xl" />
               <div className="w-full p-5 flex flex-col items-center gap-3 relative">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-200 to-amber-100 group-hover:from-amber-300 group-hover:to-amber-200 group-focus:from-amber-300 group-focus:to-amber-200 transition-all shadow-md ring-2 ring-amber-300/30 group-hover:ring-amber-400/50">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-200 to-amber-100 group-hover:from-amber-300 group-hover:to-amber-200 transition-all shadow-md ring-2 ring-amber-300/30 group-hover:ring-amber-400/50">
                   <Bell className="h-7 w-7 text-amber-700" strokeWidth={2} />
                 </div>
                 <span className="text-sm font-bold text-amber-900">{t('reminders')}</span>
               </div>
-            </AutoScanButton>
+            </Card>
 
             {/* Student Profile */}
-            <AutoScanButton
-              index={23}
-              autoScanIndex={autoScanIndex}
+            <Card
+              role="button"
+              tabIndex={17}
+              data-blink-index={17}
               onClick={() => navigate('/student-profile')}
-              className="group h-auto p-0 overflow-hidden border-2 border-purple-200/70 bg-gradient-to-br from-purple-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(168,85,247,0.2)] hover:border-purple-300 transition-all duration-500 hover:scale-105 relative"
+              className="group h-auto p-0 overflow-hidden border-2 border-purple-200/70 bg-gradient-to-br from-purple-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(168,85,247,0.2)] hover:border-purple-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-200/20 to-transparent rounded-full blur-xl" />
               <div className="w-full p-5 flex flex-col items-center gap-3 relative">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-200 to-purple-100 group-hover:from-purple-300 group-hover:to-purple-200 group-focus:from-purple-300 group-focus:to-purple-200 transition-all shadow-md ring-2 ring-purple-300/30 group-hover:ring-purple-400/50">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-200 to-purple-100 group-hover:from-purple-300 group-hover:to-purple-200 transition-all shadow-md ring-2 ring-purple-300/30 group-hover:ring-purple-400/50">
                   <User className="h-7 w-7 text-purple-700" strokeWidth={2} />
                 </div>
                 <span className="text-sm font-bold text-purple-900">{t('studentProfile')}</span>
               </div>
-            </AutoScanButton>
+            </Card>
           </div>
         </section>
       </div>

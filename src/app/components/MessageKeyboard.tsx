@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useBlink } from "../contexts/BlinkContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import { cn } from "./ui/utils";
 
 interface MessageKeyboardProps {
   value: string;
@@ -39,9 +38,7 @@ function buildCells(language: "en" | "ar"): KeyCell[][] {
   const rows = language === "en" ? englishRows : arabicRows;
 
   return [
-    ...rows.map((row) =>
-      row.map((char) => ({ type: "char", value: char } as const))
-    ),
+    ...rows.map((row) => row.map((char) => ({ type: "char", value: char } as const))),
     [
       { type: "action", value: "delete", label: "حذف" },
       { type: "action", value: "space", label: "مسافة" },
@@ -86,9 +83,7 @@ export function MessageKeyboard({
   }, [cells, rowIndex, colIndex]);
 
   const moveLeft = () => setColIndex((prev) => Math.max(0, prev - 1));
-
-  const moveRight = () =>
-    setColIndex((prev) => Math.min((currentRow.length ?? 1) - 1, prev + 1));
+  const moveRight = () => setColIndex((prev) => Math.min((currentRow.length ?? 1) - 1, prev + 1));
 
   const moveUp = () => {
     setRowIndex((prevRow) => {
@@ -154,71 +149,53 @@ export function MessageKeyboard({
       }
     };
 
-    const handleMouseDown = (event: MouseEvent) => {
+    const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
       if (rootRef.current && target && rootRef.current.contains(target)) return;
+
       setMode("normal");
       onExit?.();
     };
 
     window.addEventListener("blinkAction", handleBlinkAction as EventListener);
-    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
       window.removeEventListener("blinkAction", handleBlinkAction as EventListener);
-      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [onExit, onSend, setMode, value, rowIndex, colIndex, cells]);
-
-  const instructions =
-    keyboardLang === "ar"
-      ? [
-          "1 ثانية: اختيار الحرف",
-          "2 ثوانٍ: يسار",
-          "3 ثوانٍ: يمين",
-          "4 ثوانٍ: أعلى",
-          "5 ثوانٍ: أسفل",
-          "6 ثوانٍ: خروج",
-        ]
-      : [
-          "1 sec: select",
-          "2 sec: left",
-          "3 sec: right",
-          "4 sec: up",
-          "5 sec: down",
-          "6 sec: exit",
-        ];
 
   return (
     <div
       ref={rootRef}
       data-keyboard-root="true"
-      className={cn("rounded-2xl border bg-card p-4 shadow-lg space-y-4", className)}
+      className={`w-full rounded-2xl border bg-card p-4 shadow-lg space-y-4 ${className ?? ""}`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <button
             type="button"
+            data-blink-index={1000}
             onClick={() => setKeyboardLang("en")}
-            className={cn(
-              "rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
               keyboardLang === "en"
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground"
-            )}
+            }`}
           >
             English
           </button>
 
           <button
             type="button"
+            data-blink-index={1001}
             onClick={() => setKeyboardLang("ar")}
-            className={cn(
-              "rounded-xl px-4 py-2 text-sm font-medium transition-colors",
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
               keyboardLang === "ar"
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground"
-            )}
+            }`}
           >
             العربية
           </button>
@@ -234,15 +211,19 @@ export function MessageKeyboard({
           <div
             key={`${keyboardLang}-${rIndex}`}
             className="grid gap-2"
-            style={{ gridTemplateColumns: `repeat(${Math.max(row.length, 1)}, minmax(0, 1fr))` }}
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(row.length, 1)}, minmax(0, 1fr))`,
+            }}
           >
             {row.map((cell, cIndex) => {
               const active = rIndex === rowIndex && cIndex === colIndex;
+              const blinkIndex = 1100 + rIndex * 10 + cIndex;
 
               return (
                 <button
                   key={`${rIndex}-${cIndex}-${cell.type}-${cell.value}`}
                   type="button"
+                  data-blink-index={blinkIndex}
                   onClick={() => {
                     setRowIndex(rIndex);
                     setColIndex(cIndex);
@@ -260,12 +241,11 @@ export function MessageKeyboard({
                       onExit?.();
                     }
                   }}
-                  className={cn(
-                    "min-h-[58px] rounded-xl border text-base font-semibold transition-all",
+                  className={`min-h-[58px] rounded-xl border text-base font-semibold transition-all ${
                     active
                       ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
                       : "bg-background text-foreground hover:bg-muted"
-                  )}
+                  }`}
                 >
                   {cell.type === "char" ? (cell.value === " " ? "␣" : cell.value) : cell.label}
                 </button>
@@ -280,7 +260,14 @@ export function MessageKeyboard({
           {t("blinkInstructions") ?? "تعليمات التحكم بالعين"}
         </div>
         <div className="grid gap-1 sm:grid-cols-2">
-          {instructions.map((item) => (
+          {[
+            "1 ثانية: اختيار الحرف",
+            "2 ثوانٍ: يسار",
+            "3 ثوانٍ: يمين",
+            "4 ثوانٍ: أعلى",
+            "5 ثوانٍ: أسفل",
+            "6 ثوانٍ: خروج",
+          ].map((item) => (
             <div key={item}>• {item}</div>
           ))}
         </div>

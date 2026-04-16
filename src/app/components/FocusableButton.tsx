@@ -24,6 +24,7 @@ export function FocusableButton({
 
   return (
     <Button
+      type="button"
       data-blink-index={index}
       onClick={onClick}
       variant={variant}

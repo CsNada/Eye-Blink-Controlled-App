@@ -69,6 +69,7 @@ export function BrowserPage() {
 
             <div className="flex gap-2">
               <Input
+                data-blink-index={10}
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -80,7 +81,11 @@ export function BrowserPage() {
                 dir={language === "ar" ? "rtl" : "ltr"}
               />
 
-              <Button onClick={handleGo} className="min-h-[56px] min-w-[100px]">
+              <Button
+                data-blink-index={11}
+                onClick={handleGo}
+                className="min-h-[56px] min-w-[100px]"
+              >
                 <Search className="h-5 w-5 mr-2" />
                 {t("go")}
               </Button>
@@ -98,7 +103,7 @@ export function BrowserPage() {
               {bookmarks.map((bookmark, index) => (
                 <FocusableButton
                   key={bookmark.name}
-                  index={index}
+                  index={20 + index}
                   onClick={() => setCurrentUrl(bookmark.url)}
                   variant="outline"
                   className="h-auto py-4"

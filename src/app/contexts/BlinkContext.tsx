@@ -9,19 +9,7 @@ import React, {
 } from "react";
 
 type BlinkMode = "normal" | "keyboard";
-
-type BlinkAction =
-  | "select"
-  | "next"
-  | "back"
-  | "left"
-  | "right"
-  | "up"
-  | "down"
-  | "delete"
-  | "send"
-  | "space"
-  | "exit";
+type BlinkAction = "select" | "left" | "right" | "up" | "down" | "exit";
 
 type BlinkControlApi = {
   select: () => void;
@@ -56,11 +44,8 @@ type BlinkContextValue = {
 
 const BlinkContext = createContext<BlinkContextValue | undefined>(undefined);
 
-const FOCUS_SELECTOR =
-  "button:not([disabled]), a[href], [role='button']:not([aria-disabled='true']), [data-blink-focusable='true']";
-
-const ACTION_DEBOUNCE_MS = 850;
-const ACTION_COOLDOWN_MS = 700;
+const ACTION_DEBOUNCE_MS = 1000;
+const ACTION_COOLDOWN_MS = 1000;
 
 function isVisible(el: HTMLElement) {
   if (typeof window === "undefined") return false;
@@ -79,34 +64,10 @@ function isVisible(el: HTMLElement) {
   );
 }
 
-function isTextTarget(
-  el: Element | null
-): el is HTMLInputElement | HTMLTextAreaElement {
-  if (!el) return false;
-
-  return (
-    (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) &&
-    !el.disabled &&
-    !el.readOnly
-  );
-}
-
-function setNativeValue(
-  element: HTMLInputElement | HTMLTextAreaElement,
-  value: string
-) {
-  const proto =
-    element instanceof HTMLTextAreaElement
-      ? HTMLTextAreaElement.prototype
-      : HTMLInputElement.prototype;
-
-  const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
-  descriptor?.set?.call(element, value);
-}
-
-function emitInputEvents(element: HTMLInputElement | HTMLTextAreaElement) {
-  element.dispatchEvent(new Event("input", { bubbles: true }));
-  element.dispatchEvent(new Event("change", { bubbles: true }));
+function getBlinkIndex(el: HTMLElement) {
+  const raw = el.getAttribute("data-blink-index");
+  const parsed = raw ? Number(raw) : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
 }
 
 function dispatchBlinkAction(action: BlinkAction) {
@@ -115,6 +76,10 @@ function dispatchBlinkAction(action: BlinkAction) {
       detail: { action },
     })
   );
+}
+
+function isTextField(el: Element): el is HTMLInputElement | HTMLTextAreaElement {
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
 }
 
 export function BlinkProvider({ children }: { children: React.ReactNode }) {
@@ -132,7 +97,7 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
   });
 
   const onSelectRef = useRef<(() => void) | null>(null);
-  const onBackRef = useRef<(() => void) | null>(null);
+  // const onBackRef = useRef<(() => void) | null>(null);
   const onDeleteRef = useRef<(() => void) | null>(null);
   const onSendRef = useRef<(() => void) | null>(null);
   const onSpaceRef = useRef<(() => void) | null>(null);
@@ -141,17 +106,28 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
     if (typeof document === "undefined") return [];
 
     const domElements = Array.from(
-      document.querySelectorAll<HTMLElement>(FOCUS_SELECTOR)
+      document.querySelectorAll<HTMLElement>("[data-blink-index]")
     ).filter(isVisible);
 
     const manualElements = Array.from(manualButtonsRef.current).filter(isVisible);
     const merged = [...domElements, ...manualElements];
 
     const seen = new Set<HTMLElement>();
-    return merged.filter((el) => {
+    const unique = merged.filter((el) => {
       if (seen.has(el)) return false;
       seen.add(el);
       return true;
+    });
+
+    return unique.sort((a, b) => {
+      const ai = getBlinkIndex(a);
+      const bi = getBlinkIndex(b);
+      if (ai !== bi) return ai - bi;
+
+      const pos = a.compareDocumentPosition(b);
+      if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
     });
   }, []);
 
@@ -232,22 +208,28 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
   const focusNext = useCallback(() => {
     const elements = collectFocusableElements();
     if (!elements.length) return;
-    setFocusedIndex((prev) => (prev + 1) % elements.length);
-  }, [collectFocusableElements]);
+
+    const nextIndex = (focusedIndex + 1) % elements.length;
+    setFocusedIndex(nextIndex);
+
+    requestAnimationFrame(() => {
+      focusElement(nextIndex);
+    });
+  }, [collectFocusableElements, focusedIndex, focusElement]);
 
   const focusPrevious = useCallback(() => {
     const elements = collectFocusableElements();
     if (!elements.length) return;
-    setFocusedIndex((prev) => (prev - 1 + elements.length) % elements.length);
-  }, [collectFocusableElements]);
+
+    const prevIndex = (focusedIndex - 1 + elements.length) % elements.length;
+    setFocusedIndex(prevIndex);
+
+    requestAnimationFrame(() => {
+      focusElement(prevIndex);
+    });
+  }, [collectFocusableElements, focusedIndex, focusElement]);
 
   const triggerCurrent = useCallback(() => {
-    if (onSelectRef.current) {
-      onSelectRef.current();
-      setLastEvent("تم تنفيذ الاختيار");
-      return;
-    }
-
     const elements = collectFocusableElements();
     if (!elements.length) {
       setLastEvent("لا توجد عناصر قابلة للتحديد الآن");
@@ -256,6 +238,23 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
 
     const current = elements[focusedIndex] ?? elements[0];
     if (!current) return;
+
+    if (isTextField(current)) {
+      try {
+        current.focus({ preventScroll: true });
+      } catch {
+        current.focus();
+      }
+
+      try {
+        current.select();
+      } catch {
+        // ignore
+      }
+
+      setLastEvent("تم تحديد الحقل");
+      return;
+    }
 
     try {
       current.focus({ preventScroll: true });
@@ -281,14 +280,14 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (seconds === 4) {
-        if (onBackRef.current) {
-          onBackRef.current();
-        } else if (typeof window !== "undefined") {
-          window.history.back();
-        }
-        setLastEvent("تم الرجوع");
-        return;
-      }
+  if (window.history.length > 1) {
+    window.history.back();
+    setLastEvent("تم الرجوع إلى الصفحة السابقة");
+  } else {
+    setLastEvent("لا توجد صفحة سابقة للرجوع إليها");
+  }
+  return;
+}
 
       setLastEvent(`تم رصد ${seconds} ثوانٍ`);
     },
@@ -304,13 +303,13 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
 
     if (seconds === 2) {
       dispatchBlinkAction("left");
-      setLastEvent("تحرك لليسار");
+      setLastEvent("تحرك لليمين");
       return;
     }
 
     if (seconds === 3) {
       dispatchBlinkAction("right");
-      setLastEvent("تحرك لليمين");
+      setLastEvent("تحرك لليسار");
       return;
     }
 

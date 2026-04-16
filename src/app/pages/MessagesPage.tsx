@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useBlink } from "../contexts/BlinkContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -8,7 +8,7 @@ import { VoiceInput } from "../components/VoiceInput";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Input } from "../components/ui/input";
-import { Keyboard, Send, UserRound } from "lucide-react";
+import { Keyboard, Send } from "lucide-react";
 
 interface Message {
   id: string;
@@ -31,12 +31,6 @@ export function MessagesPage() {
 
   const blink = useBlink();
   const setMode = blink?.setMode ?? (() => {});
-  const focusedIndex = blink?.focusedIndex ?? 0;
-  const setTotalItems = blink?.setTotalItems ?? (() => {});
-  const setOnSelect = blink?.setOnSelect ?? (() => {});
-  const setOnBack = blink?.setOnBack ?? (() => {});
-  const setOnDelete = blink?.setOnDelete ?? (() => {});
-  const setOnSend = blink?.setOnSend ?? (() => {});
 
   const [selectedTeacher, setSelectedTeacher] = useState(TEACHERS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -48,104 +42,39 @@ export function MessagesPage() {
     [t]
   );
 
-  const totalItems = TEACHERS.length + quickMessages.length + 2;
-
-  useEffect(() => {
-    setTotalItems(totalItems);
-  }, [setTotalItems, totalItems]);
-
   const handleSendMessage = () => {
     const next = messageInput.trim();
     if (!next) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      teacher: selectedTeacher,
-      content: next,
-      timestamp: new Date().toLocaleString("ar-SA"),
-    };
+    setMessages((prev) => [
+      {
+        id: Date.now().toString(),
+        teacher: selectedTeacher,
+        content: next,
+        timestamp: new Date().toLocaleString("ar-SA"),
+      },
+      ...prev,
+    ]);
 
-    setMessages((prev) => [newMessage, ...prev]);
     setMessageInput("");
   };
-
-  useEffect(() => {
-    setOnSelect(() => {
-      if (focusedIndex >= 0 && focusedIndex < TEACHERS.length) {
-        setSelectedTeacher(TEACHERS[focusedIndex]);
-        return;
-      }
-
-      const quickIndex = focusedIndex - TEACHERS.length;
-      if (quickIndex >= 0 && quickIndex < quickMessages.length) {
-        const newMessage: Message = {
-          id: Date.now().toString(),
-          teacher: selectedTeacher,
-          content: quickMessages[quickIndex],
-          timestamp: new Date().toLocaleString("ar-SA"),
-        };
-        setMessages((prev) => [newMessage, ...prev]);
-        return;
-      }
-
-      if (focusedIndex === TEACHERS.length + quickMessages.length) {
-        handleSendMessage();
-        return;
-      }
-
-      if (focusedIndex === TEACHERS.length + quickMessages.length + 1) {
-        setShowKeyboard((prev) => {
-          const next = !prev;
-          setMode(next ? "keyboard" : "normal");
-          return next;
-        });
-      }
-    });
-  }, [setOnSelect, focusedIndex, quickMessages, selectedTeacher, messageInput, setMode]);
-
-  useEffect(() => {
-    setOnBack(() => {
-      navigate("/", { replace: false });
-    });
-  }, [setOnBack, navigate]);
-
-  useEffect(() => {
-    setOnDelete(() => {
-      setMessageInput("");
-    });
-
-    return () => {
-      setOnDelete(null);
-    };
-  }, [setOnDelete]);
-
-  useEffect(() => {
-    setOnSend(() => {
-      handleSendMessage();
-    });
-
-    return () => {
-      setOnSend(null);
-    };
-  }, [setOnSend, messageInput, selectedTeacher, messages]);
 
   return (
     <div className="container mx-auto px-4 py-8 pb-32 animate-in fade-in duration-500">
       <h2 className="text-3xl font-bold mb-6">{t("messagesTitle")}</h2>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_420px] md:items-start">
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>{t("selectTeacher")}</CardTitle>
             </CardHeader>
-
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {TEACHERS.map((teacher, index) => (
                   <FocusableButton
                     key={teacher}
-                    index={index}
+                    index={10 + index}
                     onClick={() => setSelectedTeacher(teacher)}
                     className={`p-4 rounded-xl border-2 transition-all ${
                       selectedTeacher === teacher
@@ -170,15 +99,14 @@ export function MessagesPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("quickMessages")}</CardTitle>
+              <CardTitle className="text-lg">{t("quickMessages")}</CardTitle>
             </CardHeader>
-
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {quickMessages.map((message, index) => (
                   <FocusableButton
                     key={index}
-                    index={TEACHERS.length + index}
+                    index={20 + index}
                     onClick={() => {
                       const newMessage: Message = {
                         id: Date.now().toString(),
@@ -189,7 +117,7 @@ export function MessagesPage() {
                       setMessages((prev) => [newMessage, ...prev]);
                     }}
                     variant="outline"
-                    className="h-auto py-6 text-lg"
+                    className="h-auto py-6 text-md"
                   >
                     {message}
                   </FocusableButton>
@@ -202,36 +130,9 @@ export function MessagesPage() {
             <CardHeader>
               <CardTitle>{t("sendMessage")}</CardTitle>
             </CardHeader>
-
             <CardContent className="space-y-4">
-              <VoiceInput
-                value={messageInput}
-                onChange={setMessageInput}
-                onSubmit={handleSendMessage}
-                lang={voiceLang}
-                placeholder={t("typeMessage")}
-              />
-
-              <Input
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                placeholder={t("typeMessage")}
-                className="text-base"
-                dir={language === "ar" ? "rtl" : "ltr"}
-              />
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FocusableButton
-                  index={TEACHERS.length + quickMessages.length}
-                  onClick={handleSendMessage}
-                  className="min-h-[56px] bg-emerald-500 hover:bg-emerald-600 text-white"
-                >
-                  <Send className="h-4 w-4 ml-2" />
-                  {t("send") ?? "إرسال"}
-                </FocusableButton>
-
-                <FocusableButton
-                  index={TEACHERS.length + quickMessages.length + 1}
+              <FocusableButton
+                  index={32}
                   onClick={() => {
                     setShowKeyboard((prev) => {
                       const next = !prev;
@@ -240,12 +141,19 @@ export function MessagesPage() {
                     });
                   }}
                   variant="outline"
-                  className="min-h-[56px]"
+                  className="min-h-[56px] w-full"
                 >
                   <Keyboard className="h-4 w-4 ml-2" />
                   {showKeyboard ? "إغلاق لوحة المفاتيح" : "فتح لوحة المفاتيح"}
                 </FocusableButton>
-              </div>
+
+              <VoiceInput
+                value={messageInput}
+                onChange={setMessageInput}
+                onSubmit={handleSendMessage}
+                lang={voiceLang}
+                placeholder={t("typeMessage")}
+              />
             </CardContent>
           </Card>
 
@@ -253,7 +161,6 @@ export function MessagesPage() {
             <CardHeader>
               <CardTitle>{t("messageHistory")}</CardTitle>
             </CardHeader>
-
             <CardContent>
               {messages.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
@@ -292,10 +199,10 @@ export function MessagesPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-24">
           {showKeyboard ? (
             <MessageKeyboard
-              className="xl:sticky xl:top-24"
+              className="w-full"
               value={messageInput}
               onChange={setMessageInput}
               onSend={handleSendMessage}
@@ -305,12 +212,12 @@ export function MessagesPage() {
               }}
             />
           ) : (
-            <Card className="border border-dashed bg-muted/30 xl:sticky xl:top-24">
+            <Card className="border border-dashed bg-muted/30">
               <CardContent className="p-6 text-center text-muted-foreground leading-7">
                 <Keyboard className="mx-auto mb-3 h-10 w-10 opacity-70" />
                 {language === "ar"
-                  ? "افتح لوحة المفاتيح لتظهر بجانب خانة الإدخال على اللابتوب."
-                  : "Open the keyboard to show it beside the input on desktop."}
+                  ? "افتح لوحة المفاتيح لتظهر بجانب خانة الإدخال على الشاشات الكبيرة."
+                  : "Open the keyboard to show it beside the input on larger screens."}
               </CardContent>
             </Card>
           )}

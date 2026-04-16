@@ -20,6 +20,7 @@ type VoiceInputProps = {
   multiline?: boolean;
   className?: string;
   autoSubmitOnStop?: boolean;
+  blinkBaseIndex?: number;
 };
 
 export function VoiceInput({
@@ -31,12 +32,12 @@ export function VoiceInput({
   multiline = true,
   className,
   autoSubmitOnStop = false,
+  blinkBaseIndex = 200,
 }: VoiceInputProps) {
   const recognitionRef = useRef<any>(null);
   const valueRef = useRef(value);
   const onChangeRef = useRef(onChange);
   const onSubmitRef = useRef(onSubmit);
-
   const [supported, setSupported] = useState(true);
   const [listening, setListening] = useState(false);
   const [interimText, setInterimText] = useState("");
@@ -56,7 +57,6 @@ export function VoiceInput({
 
   useEffect(() => {
     const RecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-
     if (!RecognitionCtor) {
       setSupported(false);
       return;
@@ -154,67 +154,77 @@ export function VoiceInput({
   };
 
   return (
-    <Card className={cn("border border-border shadow-lg rounded-2xl", className)}>
-      <CardContent className="p-4 space-y-4">
-        <div className="flex flex-wrap items-center gap-3 justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              onClick={listening ? stopListening : startListening}
-              className="min-h-[52px] px-5"
-            >
-              {listening ? <MicOff className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
-              {listening ? "إيقاف التسجيل" : "تسجيل صوتي"}
-            </Button>
+    <Card className={cn("border border-border shadow-sm", className)}>
+      <CardContent className="p-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            data-blink-index={blinkBaseIndex}
+            onClick={listening ? stopListening : startListening}
+            variant={listening ? "secondary" : "default"}
+            className="min-h-[44px]"
+          >
+            {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {listening ? "إيقاف التسجيل" : "تسجيل صوتي"}
+          </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={clearValue}
-              className="min-h-[52px] px-5"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              مسح
-            </Button>
-          </div>
+          <Button
+            type="button"
+            data-blink-index={blinkBaseIndex + 1}
+            onClick={clearValue}
+            variant="outline"
+            className="min-h-[44px]"
+          >
+            <Trash2 className="h-4 w-4" />
+            مسح
+          </Button>
 
           {onSubmit && (
-            <Button type="button" onClick={onSubmit} className="min-h-[52px] px-5">
-              <Send className="mr-2 h-4 w-4" />
+            <Button
+              type="button"
+              data-blink-index={blinkBaseIndex + 2}
+              onClick={onSubmit}
+              className="min-h-[44px] bg-emerald-500 hover:bg-emerald-600 text-white"
+            >
+              <Send className="h-4 w-4" />
               إرسال
             </Button>
           )}
         </div>
 
-        <div
-          dir={lang.startsWith("ar") ? "rtl" : "ltr"}
-          className={cn(
-            "rounded-2xl border bg-background p-4 text-base leading-8 whitespace-pre-wrap min-h-[120px]",
-            multiline ? "min-h-[180px]" : "min-h-[56px]",
-            !value && "text-muted-foreground"
-          )}
-        >
-          {value || placeholder}
-        </div>
+        {multiline ? (
+          <textarea
+            
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full min-h-[120px] rounded-xl border bg-background px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        ) : (
+          <input
+            
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full min-h-[52px] rounded-xl border bg-background px-4 py-3 text-base outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        )}
 
         {interimText && (
-          <p className="text-sm text-muted-foreground">
-            جارٍ التعرف: {interimText}
-          </p>
+          <div className="text-sm text-muted-foreground">جارٍ التعرف: {interimText}</div>
         )}
 
         {error && (
-          <p className="text-sm text-destructive flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm text-red-600">
             <AlertCircle className="h-4 w-4" />
             {error}
-          </p>
+          </div>
         )}
 
         {!supported && (
-          <p className="text-sm text-destructive flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
+          <div className="text-sm text-muted-foreground">
             المتصفح الحالي لا يدعم التعرف الصوتي.
-          </p>
+          </div>
         )}
       </CardContent>
     </Card>
