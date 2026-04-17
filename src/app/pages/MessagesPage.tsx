@@ -7,7 +7,6 @@ import { MessageKeyboard } from "../components/MessageKeyboard";
 import { VoiceInput } from "../components/VoiceInput";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
-import { Input } from "../components/ui/input";
 import { Keyboard, Send } from "lucide-react";
 
 interface Message {
@@ -63,7 +62,7 @@ export function MessagesPage() {
     <div className="container mx-auto px-4 py-8 pb-32 animate-in fade-in duration-500">
       <h2 className="text-3xl font-bold mb-6">{t("messagesTitle")}</h2>
 
-      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_420px] md:items-start">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)]">
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -130,30 +129,59 @@ export function MessagesPage() {
             <CardHeader>
               <CardTitle>{t("sendMessage")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <FocusableButton
-                  index={32}
-                  onClick={() => {
-                    setShowKeyboard((prev) => {
-                      const next = !prev;
-                      setMode(next ? "keyboard" : "normal");
-                      return next;
-                    });
-                  }}
-                  variant="outline"
-                  className="min-h-[56px] w-full"
-                >
-                  <Keyboard className="h-4 w-4 ml-2" />
-                  {showKeyboard ? "إغلاق لوحة المفاتيح" : "فتح لوحة المفاتيح"}
-                </FocusableButton>
 
-              <VoiceInput
-                value={messageInput}
-                onChange={setMessageInput}
-                onSubmit={handleSendMessage}
-                lang={voiceLang}
-                placeholder={t("typeMessage")}
-              />
+            <CardContent className="p-3">
+              <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
+                <div className="w-full">
+                  <FocusableButton
+                    index={32}
+                    onClick={() => {
+                      setShowKeyboard((prev) => {
+                        const next = !prev;
+                        setMode(next ? "keyboard" : "normal");
+                        return next;
+                      });
+                    }}
+                    variant="outline"
+                    className="min-h-[56px] w-full mb-3"
+                  >
+                    <Keyboard className="h-4 w-4 ml-2" />
+                    {showKeyboard ? "إغلاق لوحة المفاتيح" : "فتح لوحة المفاتيح"}
+                  </FocusableButton>
+
+                  <VoiceInput
+                    value={messageInput}
+                    onChange={setMessageInput}
+                    onSubmit={handleSendMessage}
+                    lang={voiceLang}
+                    placeholder={t("typeMessage")}
+                  />
+                </div>
+
+                <div className="w-full">
+                  {showKeyboard ? (
+                    <MessageKeyboard
+                      className="w-full"
+                      value={messageInput}
+                      onChange={setMessageInput}
+                      onSend={handleSendMessage}
+                      onExit={() => {
+                        setShowKeyboard(false);
+                        setMode("normal");
+                      }}
+                    />
+                  ) : (
+                    <Card className="border border-dashed bg-muted/30 mt-0">
+                      <CardContent className="p-6 text-center text-muted-foreground leading-7">
+                        <Keyboard className="mx-auto mb-3 h-10 w-10 opacity-70" />
+                        {language === "ar"
+                          ? "ستظهر لوحة المفاتيح هنا بجانب خانة الإدخال"
+                          : "Open the keyboard to show it beside the input on larger screens."}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -197,30 +225,6 @@ export function MessagesPage() {
               )}
             </CardContent>
           </Card>
-        </div>
-
-        <div className="space-y-4 lg:sticky lg:top-24">
-          {showKeyboard ? (
-            <MessageKeyboard
-              className="w-full"
-              value={messageInput}
-              onChange={setMessageInput}
-              onSend={handleSendMessage}
-              onExit={() => {
-                setShowKeyboard(false);
-                setMode("normal");
-              }}
-            />
-          ) : (
-            <Card className="border border-dashed bg-muted/30">
-              <CardContent className="p-6 text-center text-muted-foreground leading-7">
-                <Keyboard className="mx-auto mb-3 h-10 w-10 opacity-70" />
-                {language === "ar"
-                  ? "افتح لوحة المفاتيح لتظهر بجانب خانة الإدخال على الشاشات الكبيرة."
-                  : "Open the keyboard to show it beside the input on larger screens."}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

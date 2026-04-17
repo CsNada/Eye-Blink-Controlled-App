@@ -195,7 +195,7 @@ export function HomePage() {
               role="button"
               tabIndex={6}
               data-blink-index={6}
-              onClick={() => navigate('/educational-platforms')}
+              onClick={() => window.open('https://app.baims.com/ar/', '_blank')}
               className="overflow-hidden border-2 border-blue-200/70 bg-gradient-to-br from-blue-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(59,130,246,0.15)] hover:border-blue-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-blue-200/20 to-transparent rounded-full blur-xl" />
@@ -212,7 +212,7 @@ export function HomePage() {
               role="button"
               tabIndex={7}
               data-blink-index={7}
-              onClick={() => navigate('/educational-platforms')}
+              onClick={() => window.open('https://ajdur.com/sa', '_blank')}
               className="overflow-hidden border-2 border-indigo-200/70 bg-gradient-to-br from-indigo-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(99,102,241,0.15)] hover:border-indigo-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-indigo-200/20 to-transparent rounded-full blur-xl" />
@@ -229,7 +229,7 @@ export function HomePage() {
               role="button"
               tabIndex={8}
               data-blink-index={8}
-              onClick={() => navigate('/educational-platforms')}
+              onClick={() => window.open('https://visionacademy.online/', '_blank')}
               className="overflow-hidden border-2 border-purple-200/70 bg-gradient-to-br from-purple-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(168,85,247,0.15)] hover:border-purple-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-200/20 to-transparent rounded-full blur-xl" />
@@ -246,7 +246,7 @@ export function HomePage() {
               role="button"
               tabIndex={9}
               data-blink-index={9}
-              onClick={() => navigate('/educational-platforms')}
+              onClick={() => window.open('https://www.youtube.com/', '_blank')}
               className="overflow-hidden border-2 border-red-200/70 bg-gradient-to-br from-red-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(239,68,68,0.15)] hover:border-red-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-red-200/20 to-transparent rounded-full blur-xl" />
@@ -263,7 +263,7 @@ export function HomePage() {
               role="button"
               tabIndex={10}
               data-blink-index={10}
-              onClick={() => navigate('/educational-platforms')}
+              onClick={() => window.open('https://lms.pnu.edu.sa/', '_blank')}
               className="overflow-hidden border-2 border-slate-200/70 bg-gradient-to-br from-slate-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(100,116,139,0.15)] hover:border-slate-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-slate-200/20 to-transparent rounded-full blur-xl" />
@@ -280,7 +280,7 @@ export function HomePage() {
               role="button"
               tabIndex={11}
               data-blink-index={11}
-              onClick={() => navigate('/educational-platforms')}
+              onClick={() => window.open('https://ethosso.pnu.edu.sa/authenticationendpoint/login.do?Name=PreLoginRequestProcessor&TARGET=https%3A%2F%2Fxess.pnu.edu.sa%2FStudentSelfService%2Flogin%2Fcas&commonAuthCallerPath=%252Fcas%252Flogin&forceAuth=true&passiveAuth=false&tenantDomain=carbon.super&sessionDataKey=c3dfc20a-474d-4f42-8f8e-c9dc5abd2725&relyingParty=StudentSelfService_PROD&type=cas&sp=StudentSelfService_PROD&isSaaSApp=false&authenticators=BasicAuthenticator%3ALOCAL', '_blank')}
               className="overflow-hidden border-2 border-teal-200/70 bg-gradient-to-br from-teal-100/60 to-white shadow-lg hover:shadow-[0_10px_30px_rgba(20,184,166,0.15)] hover:border-teal-300 transition-all duration-500 hover:scale-105 relative cursor-pointer"
             >
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-teal-200/20 to-transparent rounded-full blur-xl" />

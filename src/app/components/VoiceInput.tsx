@@ -154,8 +154,8 @@ export function VoiceInput({
   };
 
   return (
-    <Card className={cn("border border-border shadow-sm", className)}>
-      <CardContent className="p-4 space-y-3">
+    <div className={cn("border border-border shadow-sm w-full rounded-xl", className)}>
+      <div className="p-4 space-y-3">
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
@@ -226,7 +226,7 @@ export function VoiceInput({
             المتصفح الحالي لا يدعم التعرف الصوتي.
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

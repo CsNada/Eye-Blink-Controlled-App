@@ -15,23 +15,21 @@ type KeyCell =
   | { type: "action"; value: "delete" | "space" | "send" | "exit"; label: string };
 
 const englishRows: string[][] = [
-  ["A", "B", "C", "D", "E", "F"],
-  ["G", "H", "I", "J", "K", "L"],
-  ["M", "N", "O", "P", "Q", "R"],
-  ["S", "T", "U", "V", "W", "X"],
-  ["Y", "Z", " ", ".", ",", "?"],
-  ["0", "1", "2", "3", "4", "5"],
-  ["6", "7", "8", "9", "@", "#"],
+  ["A", "B", "C", "D", "E", "F", "G"],
+  ["H", "I", "J", "K", "L", "M", "N"],
+  ["O", "P", "Q", "R", "S", "T", "U"],
+  ["V", "W", "X", "Y", "Z", ".", ","],
+  ["0", "1", "2", "3", "4", "5", "6"],
+  ["7", "8", "9", "@", "#", "?", "!"],
 ];
 
 const arabicRows: string[][] = [
-  ["ا", "ب", "ت", "ث", "ج", "ح"],
-  ["خ", "د", "ذ", "ر", "ز", "س"],
-  ["ش", "ص", "ض", "ط", "ظ", "ع"],
-  ["غ", "ف", "ق", "ك", "ل", "م"],
-  ["ن", "ه", "و", "ي", " ", "،"],
-  [".", "!", "؟", "٠", "١", "٢"],
-  ["٣", "٤", "٥", "٦", "٧", "٨"],
+  ["ا", "ب", "ت", "ث", "ج", "ح", "خ"],
+  ["د", "ذ", "ر", "ز", "س", "ش", "ص"],
+  ["ض", "ط", "ظ", "ع", "غ", "ف", "ق"],
+  ["ك", "ل", "م", "ن", "ه", "و", "ي"],
+  [",", ".", "!", "؟", "١", "٢", "٣"],
+  ["٤", "٥", "٦", "٧", "٨", "٩", " "],
 ];
 
 function buildCells(language: "en" | "ar"): KeyCell[][] {
@@ -170,7 +168,7 @@ export function ScanningKeyboard({
     <div
       ref={rootRef}
       data-keyboard-root="true"
-      className={`w-full rounded-2xl border bg-card p-4 shadow-lg space-y-4 ${className ?? ""}`}
+      className={`w-full rounded-2xl border bg-card p-3 shadow-lg space-y-4 ${className ?? ""}`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -178,7 +176,7 @@ export function ScanningKeyboard({
             type="button"
             data-blink-index={1000}
             onClick={() => setKeyboardLang("en")}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               keyboardLang === "en"
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground"
@@ -191,7 +189,7 @@ export function ScanningKeyboard({
             type="button"
             data-blink-index={1001}
             onClick={() => setKeyboardLang("ar")}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               keyboardLang === "ar"
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground"
@@ -206,11 +204,11 @@ export function ScanningKeyboard({
         </div>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-2 text-sm">
         {cells.map((row, rIndex) => (
           <div
             key={`${keyboardLang}-${rIndex}`}
-            className="grid gap-2"
+            className="grid gap-1"
             style={{
               gridTemplateColumns: `repeat(${Math.max(row.length, 1)}, minmax(0, 1fr))`,
             }}
@@ -241,7 +239,7 @@ export function ScanningKeyboard({
                       onExit?.();
                     }
                   }}
-                  className={`min-h-[58px] rounded-xl border text-base font-semibold transition-all ${
+                  className={`min-h-[58px] rounded-lg border text-sm font-semibold transition-all ${
                     active
                       ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
                       : "bg-background text-foreground hover:bg-muted"
@@ -255,13 +253,13 @@ export function ScanningKeyboard({
         ))}
       </div>
 
-      <div className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground leading-7">
+      <div className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground leading-6">
         <div className="font-medium text-foreground mb-1">
           {t("blinkInstructions") ?? "تعليمات التحكم بالعين"}
         </div>
-        <div className="grid gap-1 sm:grid-cols-2">
+        <div className="grid gap-0.5 md:grid-cols-3">
           {[
-            "1 ثانية: اختيار الحرف",
+            "1 ثانية: اختيار",
             "2 ثوانٍ: يسار",
             "3 ثوانٍ: يمين",
             "4 ثوانٍ: أعلى",
