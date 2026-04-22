@@ -10,11 +10,8 @@ interface ScanningKeyboardProps {
   className?: string;
 }
 
-type KeyCell =
-  | { type: "char"; value: string }
-  | { type: "action"; value: "delete" | "space" | "send" | "exit"; label: string };
-
 const englishRows: string[][] = [
+  ["English", "عربي"],
   ["A", "B", "C", "D", "E", "F", "G"],
   ["H", "I", "J", "K", "L", "M", "N"],
   ["O", "P", "Q", "R", "S", "T", "U"],
@@ -24,6 +21,7 @@ const englishRows: string[][] = [
 ];
 
 const arabicRows: string[][] = [
+  ["English", "عربي"],
   ["ا", "ب", "ت", "ث", "ج", "ح", "خ"],
   ["د", "ذ", "ر", "ز", "س", "ش", "ص"],
   ["ض", "ط", "ظ", "ع", "غ", "ف", "ق"],
@@ -32,19 +30,10 @@ const arabicRows: string[][] = [
   ["٤", "٥", "٦", "٧", "٨", "٩", " "],
 ];
 
-function buildCells(language: "en" | "ar"): KeyCell[][] {
-  const rows = language === "en" ? englishRows : arabicRows;
-
-  return [
-    ...rows.map((row) => row.map((char) => ({ type: "char", value: char } as const))),
-    [
-      { type: "action", value: "delete", label: "حذف" },
-      { type: "action", value: "space", label: "مسافة" },
-      { type: "action", value: "send", label: "إرسال" },
-      { type: "action", value: "exit", label: "خروج" },
-    ],
-  ];
-}
+const bottomActions = [
+  { label: "مسافة", value: "space" },
+  { label: "حذف حرف", value: "delete" },
+] as const;
 
 export function ScanningKeyboard({
   value,
@@ -59,42 +48,85 @@ export function ScanningKeyboard({
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const [keyboardLang, setKeyboardLang] = useState<"en" | "ar">("en");
-  const [rowIndex, setRowIndex] = useState(0);
+  const [rowIndex, setRowIndex] = useState(1);
   const [colIndex, setColIndex] = useState(0);
 
-  const cells = useMemo(() => buildCells(keyboardLang), [keyboardLang]);
+  const cells = useMemo(
+    () => (keyboardLang === "en" ? englishRows : arabicRows),
+    [keyboardLang]
+  );
+
+  const bottomRowIndex = cells.length;
   const currentRow = cells[rowIndex] ?? [];
   const currentCell = currentRow[colIndex];
 
   useEffect(() => {
-    setRowIndex(0);
+    setRowIndex(1);
     setColIndex(0);
   }, [keyboardLang]);
 
-  useEffect(() => {
-    const maxRow = Math.max(0, cells.length - 1);
-    const nextRow = Math.min(rowIndex, maxRow);
-    const nextCol = Math.min(colIndex, (cells[nextRow]?.length ?? 1) - 1);
+  const moveLeft = () => {
+    if (rowIndex === 0 || rowIndex === bottomRowIndex) {
+      setColIndex((prev) => Math.max(0, prev - 1));
+      return;
+    }
 
-    if (nextRow !== rowIndex) setRowIndex(nextRow);
-    if (nextCol !== colIndex) setColIndex(nextCol);
-  }, [cells, rowIndex, colIndex]);
+    setColIndex((prev) => Math.max(0, prev - 1));
+  };
 
-  const moveLeft = () => setColIndex((prev) => Math.max(0, prev - 1));
-  const moveRight = () => setColIndex((prev) => Math.min((currentRow.length ?? 1) - 1, prev + 1));
+  const moveRight = () => {
+    if (rowIndex === 0 || rowIndex === bottomRowIndex) {
+      setColIndex((prev) => Math.min(1, prev + 1));
+      return;
+    }
+
+    setColIndex((prev) =>
+      Math.min((cells[rowIndex]?.length ?? 1) - 1, prev + 1)
+    );
+  };
 
   const moveUp = () => {
-    setRowIndex((prevRow) => {
-      const nextRow = Math.max(0, prevRow - 1);
-      const nextLength = cells[nextRow]?.length ?? 1;
-      setColIndex((prevCol) => Math.min(prevCol, nextLength - 1));
-      return nextRow;
-    });
+    if (rowIndex === bottomRowIndex) {
+      setRowIndex(bottomRowIndex - 1);
+      setColIndex((prev) => Math.min(prev, (cells[bottomRowIndex - 1]?.length ?? 1) - 1));
+      return;
+    }
+
+    if (rowIndex === 1) {
+      setRowIndex(0);
+      setColIndex((prev) => Math.min(prev, 1));
+      return;
+    }
+
+    if (rowIndex > 1) {
+      setRowIndex((prev) => {
+        const nextRow = Math.max(1, prev - 1);
+        const nextLength = cells[nextRow]?.length ?? 1;
+        setColIndex((prevCol) => Math.min(prevCol, nextLength - 1));
+        return nextRow;
+      });
+    }
   };
 
   const moveDown = () => {
-    setRowIndex((prevRow) => {
-      const nextRow = Math.min(cells.length - 1, prevRow + 1);
+    if (rowIndex === 0) {
+      setRowIndex(1);
+      setColIndex(0);
+      return;
+    }
+
+    if (rowIndex === bottomRowIndex) {
+      return;
+    }
+
+    if (rowIndex === bottomRowIndex - 1) {
+      setRowIndex(bottomRowIndex);
+      setColIndex((prev) => Math.min(prev, 1));
+      return;
+    }
+
+    setRowIndex((prev) => {
+      const nextRow = Math.min(bottomRowIndex - 1, prev + 1);
       const nextLength = cells[nextRow]?.length ?? 1;
       setColIndex((prevCol) => Math.min(prevCol, nextLength - 1));
       return nextRow;
@@ -102,45 +134,48 @@ export function ScanningKeyboard({
   };
 
   const handleSelect = () => {
+    if (rowIndex === 0) {
+      if (currentCell === "English") {
+        setKeyboardLang("en");
+      } else if (currentCell === "عربي") {
+        setKeyboardLang("ar");
+      }
+      setRowIndex(1);
+      setColIndex(0);
+      return;
+    }
+
+    if (rowIndex === bottomRowIndex) {
+      const action = bottomActions[colIndex]?.value;
+
+      if (action === "space") {
+        onChange(value + " ");
+      } else if (action === "delete") {
+        onChange(value.slice(0, -1));
+      }
+      return;
+    }
+
     if (!currentCell) return;
 
-    if (currentCell.type === "char") {
-      onChange(value + currentCell.value);
-      return;
-    }
-
-    if (currentCell.value === "delete") {
-      onChange(value.slice(0, -1));
-      return;
-    }
-
-    if (currentCell.value === "space") {
+    if (currentCell === " ") {
       onChange(value + " ");
       return;
     }
 
-    if (currentCell.value === "send") {
-      onSend?.();
-      return;
-    }
-
-    if (currentCell.value === "exit") {
-      setMode("normal");
-      onExit?.();
-    }
+    onChange(value + currentCell);
   };
 
   useEffect(() => {
-    const handleBlinkAction = (event: Event) => {
-      const customEvent = event as CustomEvent<{ action?: string }>;
-      const action = customEvent.detail?.action;
-      if (!action) return;
+    const handleBlink = (e: Event) => {
+      const action = (e as CustomEvent<{ action?: string }>).detail?.action;
 
       if (action === "select") handleSelect();
       if (action === "left") moveLeft();
       if (action === "right") moveRight();
       if (action === "up") moveUp();
       if (action === "down") moveDown();
+
       if (action === "exit") {
         setMode("normal");
         onExit?.();
@@ -150,114 +185,167 @@ export function ScanningKeyboard({
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
       if (rootRef.current && target && rootRef.current.contains(target)) return;
-
       setMode("normal");
       onExit?.();
     };
 
-    window.addEventListener("blinkAction", handleBlinkAction as EventListener);
+    window.addEventListener("blinkAction", handleBlink as EventListener);
     document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
-      window.removeEventListener("blinkAction", handleBlinkAction as EventListener);
+      window.removeEventListener("blinkAction", handleBlink as EventListener);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [onExit, onSend, setMode, value, rowIndex, colIndex, cells]);
+  }, [onExit, setMode, value, rowIndex, colIndex, cells]);
 
   return (
     <div
       ref={rootRef}
-      data-keyboard-root="true"
-      className={`w-full rounded-2xl border bg-card p-3 shadow-lg space-y-4 ${className ?? ""}`}
+      className={`space-y-4 rounded-2xl border bg-card p-4 shadow-sm ${className ?? ""}`}
     >
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            data-blink-index={1000}
-            onClick={() => setKeyboardLang("en")}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              keyboardLang === "en"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            English
-          </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setKeyboardLang("en");
+            setRowIndex(1);
+            setColIndex(0);
+          }}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            keyboardLang === "en"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          English
+        </button>
 
-          <button
-            type="button"
-            data-blink-index={1001}
-            onClick={() => setKeyboardLang("ar")}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              keyboardLang === "ar"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            العربية
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setKeyboardLang("ar");
+            setRowIndex(1);
+            setColIndex(0);
+          }}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            keyboardLang === "ar"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          العربية
+        </button>
 
-        <div className="text-sm text-muted-foreground">
+        <div className="ms-auto text-sm font-medium text-muted-foreground">
           {t("keyboardMode") ?? "لوحة المفاتيح"}
         </div>
       </div>
 
-      <div className="grid gap-2 text-sm">
-        {cells.map((row, rIndex) => (
-          <div
-            key={`${keyboardLang}-${rIndex}`}
-            className="grid gap-1"
-            style={{
-              gridTemplateColumns: `repeat(${Math.max(row.length, 1)}, minmax(0, 1fr))`,
-            }}
-          >
-            {row.map((cell, cIndex) => {
-              const active = rIndex === rowIndex && cIndex === colIndex;
-              const blinkIndex = 1100 + rIndex * 10 + cIndex;
+      <div className="space-y-2">
+        {cells.map((row, rIndex) => {
+          if (rIndex === 0) {
+            return (
+              <div key={rIndex} className="grid grid-cols-2 gap-2">
+                {row.map((cell, cIndex) => {
+                  const active = rIndex === rowIndex && cIndex === colIndex;
 
-              return (
-                <button
-                  key={`${rIndex}-${cIndex}-${cell.type}-${cell.value}`}
-                  type="button"
-                  data-blink-index={blinkIndex}
-                  onClick={() => {
-                    setRowIndex(rIndex);
-                    setColIndex(cIndex);
+                  return (
+                    <button
+                      key={`${rIndex}-${cIndex}`}
+                      type="button"
+                      data-blink-index={1000 + cIndex}
+                      onClick={() => {
+                        if (cell === "English") setKeyboardLang("en");
+                        if (cell === "عربي") setKeyboardLang("ar");
+                        setRowIndex(1);
+                        setColIndex(0);
+                      }}
+                      className={`min-h-[58px] rounded-lg border text-sm font-semibold transition-all ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
+                          : "bg-background text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {cell}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          }
 
-                    if (cell.type === "char") {
-                      onChange(value + cell.value);
-                    } else if (cell.value === "delete") {
-                      onChange(value.slice(0, -1));
-                    } else if (cell.value === "space") {
-                      onChange(value + " ");
-                    } else if (cell.value === "send") {
-                      onSend?.();
-                    } else if (cell.value === "exit") {
-                      setMode("normal");
-                      onExit?.();
-                    }
-                  }}
-                  className={`min-h-[58px] rounded-lg border text-sm font-semibold transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
-                      : "bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {cell.type === "char" ? (cell.value === " " ? "␣" : cell.value) : cell.label}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+          return (
+            <div key={rIndex} className="grid grid-cols-7 gap-2">
+              {row.map((cell, cIndex) => {
+                const active = rIndex === rowIndex && cIndex === colIndex;
+                const blinkIndex = 1100 + rIndex * 10 + cIndex;
+
+                return (
+                  <button
+                    key={`${rIndex}-${cIndex}`}
+                    type="button"
+                    data-blink-index={blinkIndex}
+                    onClick={() => {
+                      setRowIndex(rIndex);
+                      setColIndex(cIndex);
+
+                      if (cell === " ") {
+                        onChange(value + " ");
+                      } else {
+                        onChange(value + cell);
+                      }
+                    }}
+                    className={`min-h-[58px] rounded-lg border text-sm font-semibold transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
+                        : "bg-background text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {cell === " " ? "␣" : cell}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
-      <div className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground leading-6">
-        <div className="font-medium text-foreground mb-1">
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        {bottomActions.map((item, index) => {
+          const active = rowIndex === bottomRowIndex && colIndex === index;
+
+          return (
+            <button
+              key={item.value}
+              type="button"
+              data-blink-index={2000 + index}
+              onClick={() => {
+                setRowIndex(bottomRowIndex);
+                setColIndex(index);
+
+                if (item.value === "space") {
+                  onChange(value + " ");
+                } else if (item.value === "delete") {
+                  onChange(value.slice(0, -1));
+                }
+              }}
+              className={`min-h-[58px] rounded-lg border text-sm font-semibold transition-all ${
+                active
+                  ? "bg-primary text-primary-foreground border-primary scale-[1.02] shadow-md"
+                  : "bg-background text-foreground hover:bg-muted"
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="pt-2 text-sm text-muted-foreground">
+        <div className="mb-2 font-medium">
           {t("blinkInstructions") ?? "تعليمات التحكم بالعين"}
         </div>
-        <div className="grid gap-0.5 md:grid-cols-3">
+        <ul className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {[
             "1 ثانية: اختيار",
             "2 ثوانٍ: يسار",
@@ -266,9 +354,9 @@ export function ScanningKeyboard({
             "5 ثوانٍ: أسفل",
             "6 ثوانٍ: خروج",
           ].map((item) => (
-            <div key={item}>• {item}</div>
+            <li key={item}>• {item}</li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );

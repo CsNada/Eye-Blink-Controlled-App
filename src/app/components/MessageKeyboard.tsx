@@ -84,13 +84,26 @@ export function MessageKeyboard({
   const moveRight = () => setColIndex((prev) => Math.min((currentRow.length ?? 1) - 1, prev + 1));
 
   const moveUp = () => {
-    setRowIndex((prevRow) => {
-      const nextRow = Math.max(0, prevRow - 1);
-      const nextLength = cells[nextRow]?.length ?? 1;
-      setColIndex((prevCol) => Math.min(prevCol, nextLength - 1));
-      return nextRow;
+  if (rowIndex === 0) {
+    const targetIndex = keyboardLang === "en" ? 1000 : 1001;
+    const target = document.querySelector<HTMLElement>(
+      `[data-blink-index="${targetIndex}"]`
+    );
+
+    setMode("normal");
+    requestAnimationFrame(() => {
+      target?.focus({ preventScroll: true });
     });
-  };
+    return;
+  }
+
+  setRowIndex((prevRow) => {
+    const nextRow = Math.max(0, prevRow - 1);
+    const nextLength = cells[nextRow]?.length ?? 1;
+    setColIndex((prevCol) => Math.min(prevCol, nextLength - 1));
+    return nextRow;
+  });
+};
 
   const moveDown = () => {
     setRowIndex((prevRow) => {
