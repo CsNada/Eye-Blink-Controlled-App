@@ -11,6 +11,7 @@ import { BrowsersPage } from './pages/BrowsersPage';
 import { TasksPage } from './pages/TasksPage';
 import { FilesPage } from './pages/FilesPage';
 import { StudentProfilePage } from './pages/StudentProfilePage';
+import { EyeMonitorPage } from './pages/EyeMonitorPage';
 
 export const router = createHashRouter([
   {
@@ -34,6 +35,8 @@ export const router = createHashRouter([
           { path: '*', Component: HomePage },
         ],
       },
+      // صفحة مستقلة بالكامل: بدون Header وبدون BlinkControls
+      { path: "monitor", Component: EyeMonitorPage },
     ],
   },
 ]);

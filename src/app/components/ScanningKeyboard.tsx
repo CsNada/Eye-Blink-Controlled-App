@@ -203,7 +203,7 @@ export function ScanningKeyboard({
       ref={rootRef}
       className={`space-y-4 rounded-2xl border bg-card p-4 shadow-sm ${className ?? ""}`}
     >
-      <div className="flex items-center gap-3">
+      {/* <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => {
@@ -239,7 +239,7 @@ export function ScanningKeyboard({
         <div className="ms-auto text-sm font-medium text-muted-foreground">
           {t("keyboardMode") ?? "لوحة المفاتيح"}
         </div>
-      </div>
+      </div> */}
 
       <div className="space-y-2">
         {cells.map((row, rIndex) => {
