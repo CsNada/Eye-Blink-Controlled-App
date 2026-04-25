@@ -1,230 +1,134 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { useBlink } from '../contexts/BlinkContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import { FocusableButton } from '../components/FocusableButton';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Folder, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { Folder, FileText, GraduationCap, BookOpen, Download } from 'lucide-react';
 
-interface Subject {
-  id: string;
-  name: string;
+interface SubjectFile {
+  title: string;
+  subject: string;
+  type: string;
+  size: string;
   color: string;
-  files: string[];
 }
 
 export function FilesPage() {
-  const navigate = useNavigate();
-  const { setTotalItems, setOnSelect, setOnBack, focusedIndex } = useBlink();
-  const { t } = useLanguage();
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [pdfPage, setPdfPage] = useState(1);
-
-  const subjects: Subject[] = [
+  const files: SubjectFile[] = [
     {
-      id: 'physics',
-      name: t('physics'),
+      title: 'Chapter 1: Mechanics.pdf',
+      subject: 'Physics',
+      type: 'PDF',
+      size: '2.1 MB',
       color: 'from-blue-500 to-blue-600',
-      files: ['Chapter 1: Mechanics.pdf', 'Chapter 2: Thermodynamics.pdf', 'Chapter 3: Electromagnetism.pdf'],
     },
     {
-      id: 'anatomy',
-      name: t('anatomy'),
+      title: 'Chapter 2: Thermodynamics.pdf',
+      subject: 'Physics',
+      type: 'PDF',
+      size: '1.8 MB',
+      color: 'from-blue-500 to-blue-600',
+    },
+    {
+      title: 'Introduction to Anatomy.pdf',
+      subject: 'Anatomy',
+      type: 'PDF',
+      size: '3.4 MB',
       color: 'from-rose-500 to-rose-600',
-      files: ['Chapter 1: Introduction.pdf', 'Chapter 2: Skeletal System.pdf', 'Chapter 3: Muscular System.pdf'],
     },
     {
-      id: 'chemistry',
-      name: t('chemistry'),
-      color: 'from-green-500 to-green-600',
-      files: ['Unit 1: Atomic Structure.pdf', 'Unit 2: Chemical Bonding.pdf', 'Unit 3: Reactions.pdf'],
-    },
-    {
-      id: 'computer',
-      name: t('computer'),
+      title: 'Data Structures.pdf',
+      subject: 'Computer Science',
+      type: 'PDF',
+      size: '4.2 MB',
       color: 'from-purple-500 to-purple-600',
-      files: ['Lecture 1: Programming Basics.pdf', 'Lecture 2: Data Structures.pdf', 'Lecture 3: Algorithms.pdf'],
     },
     {
-      id: 'mathematics',
-      name: t('mathematics'),
+      title: 'Calculus Notes.pdf',
+      subject: 'Mathematics',
+      type: 'PDF',
+      size: '2.9 MB',
       color: 'from-indigo-500 to-indigo-600',
-      files: ['Topic 1: Calculus.pdf', 'Topic 2: Linear Algebra.pdf', 'Topic 3: Statistics.pdf'],
     },
     {
-      id: 'biochemistry',
-      name: t('biochemistry'),
-      color: 'from-teal-500 to-teal-600',
-      files: ['Unit 1: Proteins.pdf', 'Unit 2: Carbohydrates.pdf', 'Unit 3: Lipids.pdf'],
-    },
-    {
-      id: 'physiology',
-      name: t('physiology'),
-      color: 'from-emerald-500 to-emerald-600',
-      files: ['Lecture 1: Cell Biology.pdf', 'Lecture 2: Homeostasis.pdf', 'Lecture 3: Nervous System.pdf'],
-    },
-    {
-      id: 'pharmacology',
-      name: t('pharmacology'),
+      title: 'Drug Basics.pdf',
+      subject: 'Pharmacology',
+      type: 'PDF',
+      size: '1.6 MB',
       color: 'from-violet-500 to-violet-600',
-      files: ['Module 1: Drug Basics.pdf', 'Module 2: Pharmacokinetics.pdf', 'Module 3: Drug Interactions.pdf'],
     },
   ];
 
-  const currentItems = selectedSubject
-    ? subjects.find((s) => s.id === selectedSubject)?.files || []
-    : subjects;
-
-  useEffect(() => {
-    setTotalItems(currentItems.length);
-  }, [setTotalItems, currentItems.length]);
-
-  useEffect(() => {
-    setOnSelect(() => {
-      if (selectedSubject) {
-        // File selected - would open PDF viewer
-      } else {
-        // Subject selected
-        if (focusedIndex >= 0 && focusedIndex < subjects.length) {
-          setSelectedSubject(subjects[focusedIndex].id);
-        }
-      }
-    });
-  }, [setOnSelect, focusedIndex, selectedSubject, subjects]);
-
-  useEffect(() => {
-    setOnBack(() => {
-      if (selectedSubject) {
-        setSelectedSubject(null);
-      } else {
-        navigate('/', { replace: false });
-      }
-    });
-  }, [setOnBack, selectedSubject, navigate]);
-
   return (
-    <div className="container mx-auto px-4 py-8 pb-32 animate-in fade-in duration-500">
-      <h2 className="text-3xl font-bold mb-6">{t('filesTitle')}</h2>
+    <div className="container mx-auto max-w-6xl px-4 py-8 pb-32">
+      <div className="space-y-6">
+        <div className="mb-6">
+          <h2 className="mb-2 flex items-center gap-3 text-4xl font-bold">
+            <GraduationCap className="h-9 w-9 text-primary" />
+            ملفات المواد
+          </h2>
+          <p className="text-muted-foreground">
+            واجهة عرض ملفات المواد الدراسية
+          </p>
+        </div>
 
-      <div className="grid gap-6">
-        {!selectedSubject ? (
-          /* Subjects Grid */
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('subjects')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {subjects.map((subject, index) => (
-                  <FocusableButton
-                    key={subject.id}
-                    index={index}
-                    onClick={() => setSelectedSubject(subject.id)}
-                    className="h-auto p-0 overflow-hidden"
-                  >
-                    <div className="w-full p-6 flex flex-col items-center gap-4">
-                      <div className={`p-4 rounded-2xl bg-gradient-to-br ${subject.color}`}>
-                        <Folder className="h-10 w-10 text-white" />
-                      </div>
-                      <span className="text-lg text-center font-medium">
-                        {subject.name}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {subject.files.length} files
-                      </span>
-                    </div>
-                  </FocusableButton>
-                ))}
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-blue-50 to-white shadow-lg">
+          <div className="p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="rounded-2xl bg-blue-100 p-3">
+                <BookOpen className="h-6 w-6 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          /* Files List */
-          <>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>
-                    {subjects.find((s) => s.id === selectedSubject)?.name}
-                  </CardTitle>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedSubject(null)}
-                  >
-                    <ChevronLeft className="h-5 w-5 mr-2" />
-                    {t('back')}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {currentItems.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">
-                    {t('noFiles')}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {(currentItems as string[]).map((file, index) => (
-                      <FocusableButton
-                        key={index}
-                        index={index}
-                        onClick={() => {}}
-                        variant="outline"
-                        className="w-full h-auto py-4 justify-start"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-6 w-6 text-muted-foreground" />
-                          <span className="text-lg">{file}</span>
-                        </div>
-                      </FocusableButton>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <div>
+                <h3 className="text-2xl font-semibold text-foreground">
+                  المواد والملفات
+                </h3>
+                {/* <p className="text-sm text-muted-foreground">
+                  عرض شكلي فقط بدون أي تفاعل
+                </p> */}
+              </div>
+            </div>
 
-            {/* PDF Viewer Placeholder */}
-            <Card>
-              <CardHeader>
-                <CardTitle>PDF Viewer</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-muted rounded-lg p-8 flex items-center justify-center min-h-[400px]">
-                  <div className="text-center space-y-4">
-                    <FileText className="h-16 w-16 mx-auto text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      Select a file to view
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {files.map((file, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-border bg-background p-5 shadow-sm transition-all duration-300 hover:shadow-md"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`rounded-xl bg-gradient-to-br ${file.color} p-3 text-white shadow-md`}
+                      >
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-foreground">
+                          {file.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {file.subject}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+                      {file.type}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      الحجم: <span className="font-medium text-foreground">{file.size}</span>
                     </p>
+                    <div className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                      معاينة
+                    </div>
                   </div>
                 </div>
-                
-                {/* PDF Controls */}
-                <div className="flex items-center justify-between mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPdfPage(Math.max(1, pdfPage - 1))}
-                    disabled={pdfPage === 1}
-                  >
-                    <ChevronLeft className="h-5 w-5 mr-2" />
-                    {t('previousPage')}
-                  </Button>
-                  
-                  <span className="text-sm text-muted-foreground">
-                    Page {pdfPage}
-                  </span>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => setPdfPage(pdfPage + 1)}
-                  >
-                    {t('nextPage')}
-                    <ChevronRight className="h-5 w-5 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
+              ))}
+            </div>
+
+            {/* <div className="mt-6 rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+              هذه الصفحة واجهة فقط ولا تحتوي على فتح ملفات أو أزرار تشغيل.
+            </div> */}
+          </div>
+        </div>
       </div>
     </div>
   );
