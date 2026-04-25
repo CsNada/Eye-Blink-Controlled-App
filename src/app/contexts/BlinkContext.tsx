@@ -280,12 +280,18 @@ export function BlinkProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (seconds === 4) {
-  if (window.history.length > 1) {
+  const elements = collectFocusableElements();
+
+  if (elements.length > 0) {
+    focusPrevious();
+    setLastEvent("تم الرجوع إلى العنصر السابق");
+  } else if (window.history.length > 1) {
     window.history.back();
     setLastEvent("تم الرجوع إلى الصفحة السابقة");
   } else {
-    setLastEvent("لا توجد صفحة سابقة للرجوع إليها");
+    setLastEvent("لا يوجد شيء للرجوع");
   }
+
   return;
 }
 
