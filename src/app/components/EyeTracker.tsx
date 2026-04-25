@@ -18,7 +18,7 @@ export default function EyeTracker({ onEyeData }: EyeTrackerProps) {
   }, [startTracking]);
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[100] w-[120px] select-none sm:w-[180px] lg:w-[120px]">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[100] w-[120px] select-none sm:w-[180px] lg:w-[120px] opacity-90">
       <div className="overflow-hidden rounded-3xl border border-white/15 bg-slate-950/25 shadow-2xl backdrop-blur-xl">
         <div className="relative aspect-[4/3] bg-black/20">
           <video
